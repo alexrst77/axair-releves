@@ -216,12 +216,12 @@ nav.bottom button.mid{color:var(--blue)}
   <div class="box">
     <img class="logo" id="loginLogo" alt="AXAIR Climatisation">
     <p class="sub">Relevés de chantier · Concevoir, installer, maintenir</p>
-    <div class="field"><label for="li_mail">Adresse email</label>
-      <input class="input" id="li_mail" type="email" autocomplete="username" inputmode="email" placeholder="prenom@axair.fr"></div>
+    <div class="field"><label for="li_mail">Identifiant</label>
+      <input class="input" id="li_mail" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Julien"></div>
     <div class="field"><label for="li_pass">Mot de passe</label>
       <input class="input" id="li_pass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
     <button class="btn block" id="li_go">Se connecter</button>
-    <p class="hint" id="li_hint">Compte direction : dg@axair.fr — mot de passe axair2026<br>Changez-le dans Profil après la première connexion.</p>
+
   </div>
 </div>
 
@@ -458,13 +458,17 @@ async function boot(){
   S.entreprise=ent;
   const us=await DB.all("users");
   if(!us.length){
-    await DB.put("users",{id:uid(),nom:"Julien",email:"dg@axair.fr",pass:await sha("axair2026"),
+    await DB.put("users",{id:uid(),nom:"Julien",email:"dg@axair.fr",pass:await sha("Axair2026"),
       role:"dg",perms:ROLES.dg.perms.slice(),actif:true,cree:Date.now(),maj:Date.now(),dernier:null});
   }
   const dgu=(await DB.all("users")).find(u=>(u.email||"")==="dg@axair.fr");
   if(dgu && dgu.nom==="Direction AXAIR"){
     dgu.nom="Julien"; await DB.put("users",dgu);
     for(const rr of await DB.all("releves")) if(rr.auteur==="Direction AXAIR"){ rr.auteur="Julien"; await DB.put("releves",rr); }
+  }
+  if(dgu && !(await DB.get("meta","pw_julien"))){
+    dgu.nom="Julien"; dgu.pass=await sha("Axair2026"); dgu.maj=Date.now();
+    await DB.put("users",dgu); await DB.put("meta",{id:"pw_julien",fait:Date.now()});
   }
   let compteur=await DB.get("meta","compteur"); if(!compteur) await DB.put("meta",{id:"compteur",n:0});
   applyTheme();
@@ -486,10 +490,10 @@ async function startSession(u,mark=true){
 }
 $("#li_go").onclick = async ()=>{
   const mail=$("#li_mail").value.trim().toLowerCase(), pw=$("#li_pass").value;
-  if(!mail||!pw) return toast("Saisissez votre email et votre mot de passe");
+  if(!mail||!pw) return toast("Saisissez votre identifiant et votre mot de passe");
   const users=await DB.all("users");
-  const u=users.find(x=>(x.email||"").toLowerCase()===mail);
-  if(!u) return toast("Aucun compte avec cette adresse");
+  const u=users.find(x=>(x.email||"").toLowerCase()===mail || (x.nom||"").toLowerCase()===mail);
+  if(!u) return toast("Identifiant inconnu");
   if(!u.actif) return toast("Ce compte est désactivé");
   if(u.pass !== await sha(pw)) return toast("Mot de passe incorrect");
   await startSession(u); await log("s'est connecté");
