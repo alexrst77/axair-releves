@@ -164,6 +164,7 @@ nav.bottom button.mid{color:var(--blue)}
 .sheet .inner{background:#fff;width:100%;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + var(--safe))}
 @media(min-width:700px){.sheet{align-items:center;justify-content:center}.sheet .inner{max-width:620px;border-radius:16px}}
 .sheet .handle{width:40px;height:4px;background:var(--line);border-radius:99px;margin:0 auto 14px}
+.sheetclose{float:right;margin:-6px 0 6px 10px;background:#F1F5FB;border:0;border-radius:10px;width:40px;height:40px;font-size:1rem;font-weight:700;color:var(--navy);cursor:pointer}
 .viewer{position:fixed;inset:0;z-index:90;background:#040F28;display:flex;flex-direction:column}
 .viewer .bar{display:flex;gap:8px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;align-items:center;color:#fff;font-weight:700}
 .viewer .bar button{margin-left:auto}
@@ -297,6 +298,7 @@ const PRIOS = {1:"Urgent",2:"À surveiller",3:"Information"};
 /* ---------- utilitaires ---------- */
 const $  = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const norm = v => (v==null?"":String(v)).normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase();
 const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid = ()=> Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const today = ()=> new Date().toISOString().slice(0,10);
@@ -356,15 +358,20 @@ const DB = (()=>{
 
 /* ---------- synchronisation Firestore (optionnelle) ---------- */
 const Cloud = (()=>{
-  let fdb=null, on=false, busy=false;
+  let fdb=null, on=false, busy=false, lastErr="";
   const sig = p => [p.src?p.src.length:0,p.legende,p.note,p.cat,p.emplacement,p.prio,p.obs].join("|");
+  const net = o => JSON.parse(JSON.stringify(o));   // Firestore refuse les valeurs undefined
+  function erreur(e){
+    lastErr = (e && (e.code||e.message)) ? (e.code||e.message) : String(e);
+    console.warn("Firestore",e);
+  }
   async function init(){
     if(!FIREBASE_CONFIG.apiKey || !window.firebase) return false;
     try{
       firebase.initializeApp(FIREBASE_CONFIG);
       fdb=firebase.firestore();
       try{ await fdb.enablePersistence({synchronizeTabs:true}); }catch(e){}
-      try{ await firebase.auth().signInAnonymously(); }catch(e){ console.warn("Auth anonyme refusée",e); }
+      try{ await firebase.auth().signInAnonymously(); }catch(e){ erreur(e); }
       on=true;
     }catch(e){ console.warn("Firebase indisponible",e); on=false; }
     return on;
@@ -374,22 +381,23 @@ const Cloud = (()=>{
     (async()=>{
       try{
         if(store==="releves"){
-          const copie={...obj}; const photos=copie.photos||[]; delete copie.photos; delete copie._cloudPhotos;
-          fdb.collection("releves").doc(obj.id).set(copie).catch(()=>{});
+          const photos=obj.photos||[];
+          const copie=net(obj); delete copie.photos; delete copie._cloudPhotos;
+          fdb.collection("releves").doc(obj.id).set(copie).catch(erreur);
           const sub=fdb.collection("releves").doc(obj.id).collection("photos");
           for(const ph of photos){
             const st=sig(ph);
             if(ph._sig===st) continue;
-            ph._sig=st; const d={...ph}; delete d._sig;
-            sub.doc(ph.id).set(d).catch(()=>{});
+            ph._sig=st; const d=net(ph); delete d._sig;
+            sub.doc(ph.id).set(d).catch(erreur);
           }
           const snap=await sub.get();
           const ids=photos.map(x=>x.id);
           snap.docs.forEach(d=>{ if(!ids.includes(d.id)) d.ref.delete().catch(()=>{}); });
         } else {
-          fdb.collection(store).doc(obj.id).set(JSON.parse(JSON.stringify(obj))).catch(()=>{});
+          fdb.collection(store).doc(obj.id).set(net(obj)).catch(erreur);
         }
-      }catch(e){}
+      }catch(e){ erreur(e); }
     })();
   }
   function del(store,id){ if(on) fdb.collection(store).doc(id).delete().catch(()=>{}); }
@@ -422,10 +430,10 @@ const Cloud = (()=>{
         await DB.putLocal("releves",dist);
       }
       return true;
-    }catch(e){ console.warn("Synchro impossible",e); return false; }
+    }catch(e){ erreur(e); return false; }
     finally{ busy=false; }
   }
-  return {init,push,del,pull,photosDe,actif:()=>on};
+  return {init,push,del,pull,photosDe,actif:()=>on,erreur:()=>lastErr};
 })();
 
 /* ---------- état global ---------- */
@@ -489,10 +497,11 @@ async function startSession(u,mark=true){
   await refresh(); go("home");
 }
 $("#li_go").onclick = async ()=>{
-  const mail=$("#li_mail").value.trim().toLowerCase(), pw=$("#li_pass").value;
+  const mail=$("#li_mail").value.trim(), pw=$("#li_pass").value;
   if(!mail||!pw) return toast("Saisissez votre identifiant et votre mot de passe");
   const users=await DB.all("users");
-  const u=users.find(x=>(x.email||"").toLowerCase()===mail || (x.nom||"").toLowerCase()===mail);
+  const id=norm(mail);
+  const u=users.find(x=>norm(x.email)===id || norm(x.nom)===id || norm(x.pseudo)===id);
   if(!u) return toast("Identifiant inconnu");
   if(!u.actif) return toast("Ce compte est désactivé");
   if(u.pass !== await sha(pw)) return toast("Mot de passe incorrect");
@@ -717,7 +726,8 @@ function unlockScroll(){ document.body.classList.remove("lock"); document.body.s
 function sheet(html){
   lockScroll();
   $("#modals").innerHTML=`<div class="sheet" onclick="if(event.target===this)closeSheet()">
-    <div class="inner"><div class="handle"></div>${html}</div></div>`;
+    <div class="inner"><div class="handle"></div>
+      <button class="sheetclose" onclick="closeSheet()">✕</button>${html}</div></div>`;
 }
 function closeSheet(){ $("#modals").innerHTML=""; unlockScroll(); }
 
@@ -743,7 +753,8 @@ function vProfil(){
       <div style="font-size:.85rem;color:var(--muted);margin-bottom:10px">
         Stockage : ${DB.isMem()?"mémoire de session (mode restreint)":"base locale de l'appareil"} ·
         État : <b id="netState">${navigator.onLine?"en ligne":"hors connexion"}</b><br>
-        Cloud : <b>${Cloud.actif()?"Firebase connecté ("+FIREBASE_CONFIG.projectId+")":"non configuré — données locales uniquement"}</b></div>
+        Cloud : <b>${Cloud.actif()?"Firebase connecté ("+FIREBASE_CONFIG.projectId+")":"non configuré — données locales uniquement"}</b>
+        ${Cloud.erreur()?`<br><span style="color:var(--red)">Dernière erreur : ${esc(Cloud.erreur())}</span>`:""}</div>
       ${Cloud.actif()?`<button class="btn sm block" style="margin-bottom:10px" onclick="synchroniser()">Synchroniser maintenant</button>`:""}
       <div class="grid2">
         <button class="btn sm ghost" onclick="sauvegardeJSON()">Sauvegarde .json</button>
@@ -768,7 +779,16 @@ async function synchroniser(){
   for(const c of S.clients) Cloud.push("clients",c);
   for(const u of S.users) Cloud.push("users",u);
   const ok=await Cloud.pull(); await refresh();
-  toast(ok?"Synchronisation terminée":"Synchronisation impossible"); vProfil();
+  if(ok) toast("Synchronisation terminée");
+  else{
+    const e=Cloud.erreur()||"";
+    toast(e.includes("permission-denied") ? "Refusé par Firestore : publiez les règles de sécurité"
+      : e.includes("unauthenticated")||e.includes("admin-restricted")||e.includes("operation-not-allowed")
+        ? "Activez la connexion Anonyme dans Firebase Authentication"
+      : e.includes("unauthorized-domain") ? "Ajoutez alexrst77.github.io aux domaines autorisés"
+      : "Synchronisation impossible"+(e?" ("+e+")":""), 5200);
+  }
+  vProfil();
 }
 function logout(){ LS.del("axair_session"); location.reload(); }
 async function sauvegardeJSON(){
@@ -846,8 +866,10 @@ function vUsers(){
 function editUser(id){
   const u=id?S.users.find(x=>x.id===id):{id:uid(),nom:"",email:"",role:"technicien",perms:ROLES.technicien.perms.slice(),actif:true};
   sheet(`<h2>${id?"Modifier l'utilisateur":"Nouvel utilisateur"}</h2><div class="tri-sm"></div>
-    <div class="field"><label>Nom et prénom</label><input class="input" id="u_nom" value="${esc(u.nom)}"></div>
-    <div class="field"><label>Adresse email (identifiant)</label><input class="input" type="email" id="u_mail" value="${esc(u.email)}"></div>
+    <div class="field"><label>Pseudo de connexion</label><input class="input" id="u_nom" value="${esc(u.nom)}"
+      autocapitalize="words" placeholder="ex. José"></div>
+    <div class="field"><label>Adresse email (facultative)</label><input class="input" type="email" id="u_mail"
+      value="${esc(u.email)}" placeholder="générée automatiquement si vide"></div>
     <div class="field"><label>Profil</label><select class="input" id="u_role" onchange="majPerms()">
       ${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${u.role===k?"selected":""}>${v.label}</option>`).join("")}</select></div>
     <div class="field"><label>Autorisations</label><div id="u_perms">
@@ -865,9 +887,12 @@ function majPerms(){
   $$("#u_perms input").forEach(i=>i.checked=ROLES[r].perms.includes(i.value));
 }
 async function saveUser(id,exist){
-  const nom=$("#u_nom").value.trim(), mail=$("#u_mail").value.trim().toLowerCase();
-  if(!nom||!mail) return toast("Nom et email obligatoires");
-  const dup=S.users.find(x=>x.email===mail&&x.id!==id); if(dup) return toast("Cette adresse est déjà utilisée");
+  const nom=$("#u_nom").value.trim();
+  let mail=$("#u_mail").value.trim().toLowerCase();
+  if(!nom) return toast("Le pseudo est obligatoire");
+  if(!mail) mail=norm(nom).replace(/[^a-z0-9]+/g,"")+"@axair.local";
+  const dup=S.users.find(x=>(norm(x.email)===norm(mail)||norm(x.nom)===norm(nom))&&x.id!==id);
+  if(dup) return toast("Ce pseudo ou cette adresse existe déjà");
   const old=S.users.find(x=>x.id===id);
   const pw=$("#u_pass").value.trim();
   if(!exist&&!pw) return toast("Définissez un mot de passe");
@@ -1032,7 +1057,11 @@ function tInfos(){
 function setObjet(o){ S.current.objet=o; touchSave(); tInfos(); if(o==="Autre") setTimeout(()=>$("#i_objautre")&&$("#i_objautre").focus(),60); }
 function objetLabel(r){ return (r.objet==="Autre" && (r.objetAutre||"").trim()) ? r.objetAutre.trim() : (r.objet||""); }
 function copierAdresseChantier(){
-  const r=S.current; r.adressePost=r.adresse||""; r.cpPost=r.cp||""; r.villePost=r.ville||"";
+  const r=S.current;
+  if(!r.adresse && !r.cp && !r.ville) return toast("Renseignez d'abord l'adresse du chantier, onglet Chantier");
+  if(r.adresse) r.adressePost=r.adresse;
+  if(r.cp) r.cpPost=r.cp;
+  if(r.ville) r.villePost=r.ville;
   touchSave(); tInfos(); toast("Adresse postale reprise du chantier");
 }
 function lierClient(id){
@@ -1351,18 +1380,34 @@ CONTRAINTES / SÉCURITÉ :
 TRAVAUX À RÉALISER : `;
   t.value=(t.value?t.value+"\n\n":"")+modele; S.current.notes=t.value; touchSave(); t.focus();
 }
+function stopDictee(){
+  const btn=$("#micBtn");
+  if(reco){ reco._stop=true; try{reco.stop();}catch(e){} reco=null; }
+  if(btn){ btn.textContent="🎙 Dicter"; btn.classList.remove("danger"); }
+}
 function toggleDictee(){
   const btn=$("#micBtn"), t=$("#n_txt");
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(reco){ reco.stop(); reco=null; btn.textContent="🎙 Dicter"; btn.classList.remove("danger"); return; }
-  reco=new SR(); reco.lang="fr-FR"; reco.continuous=true; reco.interimResults=false;
+  if(reco) return stopDictee();
+  if(!SR) return toast("Utilisez le micro du clavier de votre téléphone");
+  try{ reco=new SR(); }catch(e){ return toast("Dictée indisponible ici — micro du clavier"); }
+  reco.lang="fr-FR"; reco.continuous=false; reco.interimResults=false; reco.maxAlternatives=1;
   reco.onresult=e=>{
-    let add=""; for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) add+=e.results[i][0].transcript+" ";
-    if(add){ t.value=(t.value?t.value.trimEnd()+" ":"")+add.trim(); S.current.notes=t.value; touchSave(); }
+    let add="";
+    for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) add+=e.results[i][0].transcript+" ";
+    add=add.trim();
+    if(add){ t.value=(t.value?t.value.trimEnd()+" ":"")+add; S.current.notes=t.value; touchSave(); }
   };
-  reco.onerror=()=>{ toast("Dictée interrompue"); reco=null; btn.textContent="🎙 Dicter"; btn.classList.remove("danger"); };
-  reco.onend=()=>{ if(reco){ try{reco.start();}catch(e){} } };
-  reco.start(); btn.textContent="⏹ Arrêter la dictée"; btn.classList.add("danger"); toast("Parlez, le texte s'ajoute aux notes");
+  reco.onerror=e=>{
+    const msg={"not-allowed":"micro refusé — Réglages > Safari > Microphone",
+      "service-not-allowed":"micro bloqué dans l'app installée, utilisez le micro du clavier",
+      "no-speech":"rien entendu","audio-capture":"aucun micro détecté","network":"réseau indisponible"}[e.error]||e.error;
+    toast("Dictée : "+msg); stopDictee();
+  };
+  reco.onend=()=>{ if(reco&&!reco._stop){ try{ reco.start(); }catch(e){ stopDictee(); } } };
+  try{ reco.start(); }catch(e){ return toast("Relancez la dictée"); }
+  btn.textContent="⏹ Arrêter la dictée"; btn.classList.add("danger");
+  toast("Parlez, le texte s'ajoute aux notes");
 }
 
 /* ===================== RAPPORT ===================== */
