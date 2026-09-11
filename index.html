@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#00174D">
+<meta name="color-scheme" content="light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AXAIR Relevés">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>AXAIR · Relevés de chantier</title>
+<style>
+:root{
+  --navy:#00174D; --navy-2:#0B2A6B; --blue:#0271FD; --blue-soft:#E7F0FF; --red:#FA1419;
+  --bg:#EEF2F8; --card:#FFFFFF; --line:#DCE3EE; --ink:#0D1B33; --muted:#64748B;
+  --ok:#0E9F6E; --warn:#D97706; --r:14px; --safe:env(safe-area-inset-bottom,0px);
+}
+:root{color-scheme:light}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased; overscroll-behavior-y:none;
+}
+h1,h2,h3{margin:0;letter-spacing:-.02em;font-weight:800;color:var(--navy)}
+h1{font-size:1.5rem} h2{font-size:1.15rem} h3{font-size:1rem}
+p{margin:0 0 10px}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--blue);text-decoration:none}
+.hidden{display:none!important}
+
+/* signature tricolore issue du logo */
+.tri{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--navy) 0 46%,#fff 46% 60%,var(--red) 60% 100%);}
+.tri-sm{height:3px;width:52px;border-radius:2px;background:linear-gradient(90deg,var(--navy) 0 46%,#E3E9F3 46% 60%,var(--red) 60% 100%);margin:6px 0 14px}
+
+/* ---------- LOGIN ---------- */
+#login{min-height:100%;display:none;flex-direction:column;justify-content:center;padding:28px 22px;
+  background:radial-gradient(120% 70% at 50% 0%,#0B2A6B 0%,#00174D 58%,#000E2E 100%);}
+#login .box{width:100%;max-width:400px;margin:0 auto}
+#login img.logo{width:100%;max-width:280px;display:block;margin:0 auto 6px;filter:brightness(0) invert(1)}
+#login .sub{color:#9FB6DC;text-align:center;margin:0 0 26px;font-size:.92rem}
+#login .field{margin-bottom:12px}
+#login label{display:block;font-size:.8rem;color:#9FB6DC;margin-bottom:6px;font-weight:600}
+#login input{width:100%;padding:15px 14px;border-radius:12px;border:1px solid #1C3D7D;background:#071E52;color:#fff;font-size:16px}
+#login input:focus{outline:2px solid var(--blue);border-color:transparent}
+#login .hint{color:#7E97C4;font-size:.78rem;text-align:center;margin-top:18px;line-height:1.6}
+
+/* ---------- BOUTONS ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;
+  padding:15px 18px;font-weight:700;font-size:1rem;background:var(--blue);color:#fff;cursor:pointer;min-height:50px}
+.btn:active{transform:translateY(1px)}
+.btn.block{width:100%}
+.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.btn.navy{background:var(--navy)}
+.btn.danger{background:var(--red)}
+.btn.sm{padding:9px 13px;min-height:40px;font-size:.88rem;border-radius:10px}
+.btn:disabled{opacity:.5}
+.iconbtn{background:#fff;border:1px solid var(--line);border-radius:10px;width:42px;height:42px;display:inline-flex;
+  align-items:center;justify-content:center;font-size:1.05rem;cursor:pointer}
+
+/* ---------- APP SHELL ---------- */
+#app{display:none;padding-bottom:calc(84px + var(--safe))}
+header.top{position:sticky;top:0;z-index:40;background:var(--navy);color:#fff;padding:10px 16px 0;
+  padding-top:calc(10px + env(safe-area-inset-top,0px))}
+header.top .row{display:flex;align-items:center;gap:12px;padding-bottom:10px}
+header.top img{height:26px;filter:brightness(0) invert(1)}
+header.top .who{margin-left:auto;text-align:right;font-size:.72rem;color:#A8BEE2;line-height:1.25}
+header.top .who b{display:block;color:#fff;font-size:.85rem;font-weight:700}
+.screen{padding:16px 14px 8px;max-width:820px;margin:0 auto}
+.screen-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:2px}
+.screen-head .btn{margin-left:auto}
+.hero{background:var(--navy);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.hero h1{color:#fff;margin-bottom:2px}
+.hero p{color:#A8BEE2;font-size:.84rem;margin:0 0 10px}
+.reftop{background:var(--navy);border-radius:12px;padding:8px 10px;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.reftop b{color:#fff;font-size:1rem;display:block}
+.reftop .rt-main{flex:1;min-width:0;overflow:hidden}
+.reftop .saveflag{color:#A8BEE2;font-size:.74rem}
+.reftop .back{background:#12336E;color:#fff;border:0;border-radius:10px;width:40px;height:40px;font-size:1.15rem;flex:0 0 auto;cursor:pointer}
+body.lock{position:fixed;left:0;right:0;overflow:hidden;width:100%}
+
+/* ---------- CARTES ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card.tap{cursor:pointer}
+.card.tap:active{background:#F7FAFF}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.stat b{display:block;font-size:1.7rem;font-weight:800;color:var(--navy);letter-spacing:-.03em;line-height:1.1}
+.stat span{font-size:.78rem;color:var(--muted);font-weight:600}
+.stat.accent{background:var(--navy);border-color:var(--navy)}
+.stat.accent b,.stat.accent span{color:#fff}
+.stat.accent span{color:#A8BEE2}
+
+.item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0;padding-bottom:0}
+.item:first-child{padding-top:0}
+.item .main{flex:1;min-width:0}
+.item .main b{display:block;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .main small{color:var(--muted);font-size:.8rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb{width:52px;height:52px;border-radius:10px;object-fit:cover;background:#E7EDF6;flex:0 0 auto}
+
+.badge{display:inline-block;padding:3px 9px;border-radius:99px;font-size:.7rem;font-weight:800;letter-spacing:.01em;white-space:nowrap}
+.b-brouillon{background:#EDF1F7;color:#5A6781}
+.b-completer{background:#FEF3C7;color:#92400E}
+.b-termine{background:#D1FAE5;color:#065F46}
+.b-valide{background:var(--blue-soft);color:#0B4FB8}
+.b-archive{background:#E2E8F0;color:#475569}
+
+/* ---------- FORMULAIRES ---------- */
+.field{margin-bottom:12px}
+.field label{display:block;font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:5px}
+.input,select.input,textarea.input{width:100%;padding:13px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;font-size:16px}
+.input:focus{outline:2px solid var(--blue);border-color:transparent}
+textarea.input{min-height:110px;resize:vertical;line-height:1.5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:9px 13px;border-radius:99px;border:1px solid var(--line);background:#fff;font-size:.85rem;font-weight:600;cursor:pointer}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.switch{display:flex;align-items:center;gap:10px;padding:9px 0;font-size:.9rem}
+.switch input{width:20px;height:20px;accent-color:var(--blue)}
+
+/* ---------- ONGLETS RELEVÉ ---------- */
+.tabs{position:sticky;top:calc(46px + env(safe-area-inset-top,0px));z-index:30;background:var(--bg);
+  display:flex;gap:6px;overflow-x:auto;padding:10px 14px;scrollbar-width:none;border-bottom:1px solid var(--line)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:9px 14px;border-radius:99px;background:#fff;border:1px solid var(--line);
+  font-size:.85rem;font-weight:700;color:var(--muted);cursor:pointer}
+.tab.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* ---------- PHOTOS ---------- */
+.photogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.photo{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.photo img{width:100%;height:130px;object-fit:cover;display:block;background:#E7EDF6}
+.photo .meta{padding:8px 9px}
+.photo .meta .cap{font-size:.82rem;font-weight:700;color:var(--navy);min-height:1.2em}
+.photo .meta .nt{font-size:.74rem;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.photo .acts{display:flex;gap:4px;padding:0 6px 7px}
+.photo .acts button{flex:1;border:0;background:#F1F5FB;border-radius:8px;padding:7px 0;font-size:.9rem;cursor:pointer}
+.capture{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.capture .btn{height:64px;font-size:1rem;flex-direction:column;gap:2px;line-height:1.1}
+.capture .btn small{font-size:.68rem;font-weight:600;opacity:.8}
+.prio-1{border-left:4px solid var(--red)} .prio-2{border-left:4px solid var(--warn)} .prio-3{border-left:4px solid var(--line)}
+
+/* ---------- TRAVAUX ---------- */
+.work{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
+.work .qty{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ---------- NAV BASSE ---------- */
+nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;border-top:1px solid var(--line);
+  display:flex;padding:6px 4px calc(6px + var(--safe));box-shadow:0 -6px 20px rgba(0,23,77,.07)}
+nav.bottom button{flex:1;background:none;border:0;padding:6px 2px;display:flex;flex-direction:column;align-items:center;
+  gap:3px;color:var(--muted);font-size:.66rem;font-weight:700;cursor:pointer}
+nav.bottom button .ic{font-size:1.3rem;line-height:1}
+nav.bottom button.on{color:var(--blue)}
+nav.bottom button.mid .ic{background:var(--blue);color:#fff;width:46px;height:46px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;margin-top:-20px;box-shadow:0 6px 16px rgba(2,113,253,.45);font-size:1.5rem}
+nav.bottom button.mid{color:var(--blue)}
+
+/* ---------- MODALES / VISIONNEUSE ---------- */
+.sheet{position:fixed;inset:0;z-index:80;background:rgba(4,16,40,.55);display:flex;align-items:flex-end}
+.sheet .inner{background:#fff;width:100%;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + var(--safe))}
+@media(min-width:700px){.sheet{align-items:center;justify-content:center}.sheet .inner{max-width:620px;border-radius:16px}}
+.sheet .handle{width:40px;height:4px;background:var(--line);border-radius:99px;margin:0 auto 14px}
+.viewer{position:fixed;inset:0;z-index:90;background:#040F28;display:flex;flex-direction:column}
+.viewer .bar{display:flex;gap:8px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;align-items:center;color:#fff;font-weight:700}
+.viewer .bar button{margin-left:auto}
+.viewer .stage{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
+.viewer canvas,.viewer img{max-width:100%;max-height:100%;touch-action:none}
+.tools{display:flex;gap:6px;overflow-x:auto;padding:10px 12px calc(12px + var(--safe));background:#071E52;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools button{flex:0 0 auto;background:#12336E;color:#fff;border:0;border-radius:10px;padding:10px 13px;font-size:.85rem;font-weight:700;cursor:pointer}
+.tools button.on{background:var(--blue)}
+.tools .sep{width:1px;background:#1C3D7D;flex:0 0 auto;margin:4px 2px}
+
+/* ---------- TOASTS / OFFLINE ---------- */
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + var(--safe));z-index:120;
+  background:var(--navy);color:#fff;padding:11px 17px;border-radius:12px;font-size:.87rem;font-weight:600;
+  box-shadow:0 8px 24px rgba(0,23,77,.3);opacity:0;pointer-events:none;transition:opacity .2s;max-width:88vw;text-align:center}
+#toast.on{opacity:1}
+#netbar{display:none;background:var(--warn);color:#fff;font-size:.78rem;font-weight:700;text-align:center;padding:6px 10px}
+#netbar.sync{background:var(--ok)}
+.saveflag{font-size:.72rem;color:var(--muted);font-weight:600}
+
+/* ---------- RAPPORT ---------- */
+#report{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px}
+#report .rh{display:flex;align-items:flex-start;gap:14px;margin-bottom:10px}
+#report .rh img{height:40px}
+#report .rh .ref{margin-left:auto;text-align:right;font-size:.76rem;color:var(--muted)}
+#report .rh .ref b{display:block;color:var(--navy);font-size:1rem}
+#report h4{margin:18px 0 6px;font-size:.78rem;font-weight:800;color:var(--blue)}
+#report table{width:100%;border-collapse:collapse;font-size:.82rem}
+#report th{text-align:left;background:#F2F6FC;color:var(--navy);padding:7px 8px;font-size:.74rem}
+#report td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+#report .kv{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;font-size:.85rem}
+#report .kv div span{color:var(--muted);font-size:.74rem;display:block;font-weight:600}
+#report .rphotos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#report .rphotos figure{margin:0}
+#report .rphotos img{width:100%;border-radius:8px;border:1px solid var(--line)}
+#report .rphotos figcaption{font-size:.75rem;margin-top:4px}
+#report .rphotos figcaption b{color:var(--navy)}
+#report .rphotos figcaption em{display:block;color:var(--muted);font-style:normal}
+.empty{text-align:center;color:var(--muted);padding:26px 12px;font-size:.9rem}
+.empty .big{font-size:2rem;display:block;margin-bottom:6px}
+@media print{nav.bottom,header.top,.tabs,.noprint{display:none!important}#app{padding:0}#report{border:0}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<div id="login">
+  <div class="box">
+    <img class="logo" id="loginLogo" alt="AXAIR Climatisation">
+    <p class="sub">Relevés de chantier · Concevoir, installer, maintenir</p>
+    <div class="field"><label for="li_mail">Adresse email</label>
+      <input class="input" id="li_mail" type="email" autocomplete="username" inputmode="email" placeholder="prenom@axair.fr"></div>
+    <div class="field"><label for="li_pass">Mot de passe</label>
+      <input class="input" id="li_pass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+    <button class="btn block" id="li_go">Se connecter</button>
+    <p class="hint" id="li_hint">Compte direction : dg@axair.fr — mot de passe axair2026<br>Changez-le dans Profil après la première connexion.</p>
+  </div>
+</div>
+
+<div id="app">
+  <header class="top">
+    <div class="row">
+      <img id="topLogo" alt="AXAIR">
+      <div class="who"><b id="whoName">—</b><span id="whoRole">—</span></div>
+    </div>
+    <div class="tri"></div>
+  </header>
+  <div id="netbar">Hors connexion — données enregistrées localement</div>
+  <div id="tabsHost"></div>
+  <main id="view"></main>
+  <nav class="bottom">
+    <button data-nav="home"><span class="ic">⌂</span>Accueil</button>
+    <button data-nav="releves"><span class="ic">▤</span>Relevés</button>
+    <button class="mid" data-nav="new"><span class="ic">＋</span>Nouveau</button>
+    <button data-nav="clients"><span class="ic">☰</span>Clients</button>
+    <button data-nav="profil"><span class="ic">◉</span>Profil</button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+<div id="modals"></div>
+
+<script>
+/* ===================================================================
+   AXAIR CLIMATISATION — Relevés de chantier
+   PWA mono-fichier · IndexedDB · hors connexion · PDF
+   =================================================================== */
+/* ------------------------------------------------------------------
+   CONFIGURATION FIREBASE — collez ici l'objet firebaseConfig de votre
+   projet (Console Firebase > Paramètres du projet > Vos applications).
+   Laissez apiKey vide pour rester 100 % local (aucun compte requis).
+   ------------------------------------------------------------------ */
+const FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+
+const LOGO = "data:image/png;base64,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";
+
+const ROLES = {
+  dg:        {label:"DG / Super administrateur", perms:["creer","modifier","supprimer","voir_tous","exporter","users","clients","entreprise"]},
+  admin:     {label:"Administrateur",            perms:["creer","modifier","supprimer","voir_tous","exporter","users","clients"]},
+  conducteur:{label:"Conducteur de travaux",     perms:["creer","modifier","voir_tous","exporter","clients"]},
+  chef:      {label:"Chef d'équipe",             perms:["creer","modifier","exporter","clients"]},
+  technicien:{label:"Technicien",                perms:["creer","modifier","exporter"]},
+  commercial:{label:"Commercial",                perms:["creer","modifier","voir_tous","exporter","clients"]},
+  lecture:   {label:"Lecture seule",             perms:[]}
+};
+const PERM_LABELS = {
+  creer:"Créer un relevé", modifier:"Modifier un relevé", supprimer:"Supprimer un relevé",
+  voir_tous:"Voir tous les relevés", exporter:"Exporter les rapports",
+  users:"Gérer les utilisateurs", clients:"Modifier les fiches clients", entreprise:"Paramètres entreprise"
+};
+const STATUTS = {
+  brouillon:{l:"Brouillon",c:"b-brouillon"}, completer:{l:"À compléter",c:"b-completer"},
+  termine:{l:"Terminé",c:"b-termine"}, valide:{l:"Validé",c:"b-valide"}, archive:{l:"Archivé",c:"b-archive"}
+};
+const OBJETS = ["Installation climatisation","Maintenance / entretien","Dépannage","Pompe à chaleur","VMC / ventilation",
+  "Plomberie","Chauffage","Devis / étude","Mise en service","Autre"];
+const UNITES = ["unité","heure","jour","mètre","m²","m³","kg","forfait"];
+const CATS_PHOTO = ["Unité extérieure","Unité intérieure","Liaison frigorifique","Électricité","Évacuation condensats",
+  "Accès / passage","Existant","Plomberie","Sécurité","Autre"];
+const PRIOS = {1:"Urgent",2:"À surveiller",3:"Information"};
+
+/* ---------- utilitaires ---------- */
+const $  = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = ()=> Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const today = ()=> new Date().toISOString().slice(0,10);
+const nowHM = ()=> new Date().toTimeString().slice(0,5);
+const fdate = d => { if(!d) return "—"; const p=String(d).slice(0,10).split("-"); return p.length===3? p[2]+"/"+p[1]+"/"+p[0] : d; };
+const fdt = ts => { if(!ts) return "jamais"; const d=new Date(ts);
+  return d.toLocaleDateString("fr-FR")+" à "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); };
+const LS={ get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},
+  set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},
+  del:k=>{try{localStorage.removeItem(k)}catch(e){}} };
+function toast(msg,ms=2400){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("on"),ms); }
+async function sha(txt){
+  if(window.crypto && crypto.subtle && location.protocol!=="file:"){
+    const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("axair::"+txt));
+    return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+  }
+  let h=0; const s="axair::"+txt; for(let i=0;i<s.length;i++){h=((h<<5)-h+s.charCodeAt(i))|0;} return "f"+(h>>>0).toString(16);
+}
+
+/* ---------- base de données locale (IndexedDB + repli mémoire) ---------- */
+const DB = (()=>{
+  const STORES=["users","clients","releves","logs","meta"];
+  let db=null, mem={}, useMem=false;
+  STORES.forEach(s=>mem[s]={});
+  function open(){
+    return new Promise(res=>{
+      if(!window.indexedDB){ useMem=true; return res(); }
+      let rq;
+      try{ rq=indexedDB.open("axair_releves",1); }catch(e){ useMem=true; return res(); }
+      rq.onupgradeneeded=e=>{ const d=e.target.result; STORES.forEach(s=>{ if(!d.objectStoreNames.contains(s)) d.createObjectStore(s,{keyPath:"id"}); }); };
+      rq.onsuccess=e=>{ db=e.target.result; res(); };
+      rq.onerror=()=>{ useMem=true; res(); };
+      setTimeout(()=>{ if(!db&&!useMem){useMem=true;res();} },2500);
+    });
+  }
+  function tx(store,mode){ return db.transaction(store,mode).objectStore(store); }
+  const put = (store,obj)=> new Promise(res=>{
+    if(useMem){ mem[store][obj.id]=JSON.parse(JSON.stringify(obj)); return res(obj); }
+    const r=tx(store,"readwrite").put(obj); r.onsuccess=()=>res(obj); r.onerror=()=>{ mem[store][obj.id]=obj; res(obj); };
+  });
+  const del = (store,id)=> new Promise(res=>{
+    if(useMem){ delete mem[store][id]; return res(); }
+    const r=tx(store,"readwrite").delete(id); r.onsuccess=()=>res(); r.onerror=()=>res();
+  });
+  const all = store => new Promise(res=>{
+    if(useMem) return res(Object.values(mem[store]));
+    const r=tx(store,"readonly").getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>res(Object.values(mem[store]));
+  });
+  const get = (store,id)=> new Promise(res=>{
+    if(useMem) return res(mem[store][id]||null);
+    const r=tx(store,"readonly").get(id); r.onsuccess=()=>res(r.result||null); r.onerror=()=>res(mem[store][id]||null);
+  });
+  return {open, all, get, isMem:()=>useMem, putLocal:put, delLocal:del,
+    put:(store,obj)=>{ Cloud.push(store,obj); return put(store,obj); },
+    del:(store,id)=>{ Cloud.del(store,id); return del(store,id); }};
+})();
+
+/* ---------- synchronisation Firestore (optionnelle) ---------- */
+const Cloud = (()=>{
+  let fdb=null, on=false, busy=false;
+  const sig = p => [p.src?p.src.length:0,p.legende,p.note,p.cat,p.emplacement,p.prio,p.obs].join("|");
+  async function init(){
+    if(!FIREBASE_CONFIG.apiKey || !window.firebase) return false;
+    try{
+      firebase.initializeApp(FIREBASE_CONFIG);
+      fdb=firebase.firestore();
+      try{ await fdb.enablePersistence({synchronizeTabs:true}); }catch(e){}
+      try{ await firebase.auth().signInAnonymously(); }catch(e){ console.warn("Auth anonyme refusée",e); }
+      on=true;
+    }catch(e){ console.warn("Firebase indisponible",e); on=false; }
+    return on;
+  }
+  function push(store,obj){
+    if(!on||!obj||!obj.id) return;
+    (async()=>{
+      try{
+        if(store==="releves"){
+          const copie={...obj}; const photos=copie.photos||[]; delete copie.photos; delete copie._cloudPhotos;
+          fdb.collection("releves").doc(obj.id).set(copie).catch(()=>{});
+          const sub=fdb.collection("releves").doc(obj.id).collection("photos");
+          for(const ph of photos){
+            const st=sig(ph);
+            if(ph._sig===st) continue;
+            ph._sig=st; const d={...ph}; delete d._sig;
+            sub.doc(ph.id).set(d).catch(()=>{});
+          }
+          const snap=await sub.get();
+          const ids=photos.map(x=>x.id);
+          snap.docs.forEach(d=>{ if(!ids.includes(d.id)) d.ref.delete().catch(()=>{}); });
+        } else {
+          fdb.collection(store).doc(obj.id).set(JSON.parse(JSON.stringify(obj))).catch(()=>{});
+        }
+      }catch(e){}
+    })();
+  }
+  function del(store,id){ if(on) fdb.collection(store).doc(id).delete().catch(()=>{}); }
+  async function photosDe(id){
+    if(!on) return [];
+    const snap=await fdb.collection("releves").doc(id).collection("photos").get();
+    return snap.docs.map(d=>{ const p=d.data(); p._sig=sig(p); return p; });
+  }
+  async function pull(){
+    if(!on||busy) return false; busy=true;
+    try{
+      for(const store of ["users","clients","logs","meta"]){
+        const snap=await fdb.collection(store).get();
+        for(const d of snap.docs){
+          const dist=d.data(), loc=await DB.get(store,d.id);
+          if(store==="meta" && d.id==="compteur"){
+            const n=Math.max(dist.n||0,(loc&&loc.n)||0);
+            await DB.putLocal("meta",{id:"compteur",n}); continue;
+          }
+          const md=dist.maj||dist.ts||dist.cree||0, ml=loc?(loc.maj||loc.ts||loc.cree||0):-1;
+          if(md>=ml) await DB.putLocal(store,dist);
+        }
+      }
+      const snap=await fdb.collection("releves").get();
+      for(const d of snap.docs){
+        const dist=d.data(), loc=await DB.get("releves",d.id);
+        if(loc && (loc.maj||0)>(dist.maj||0)) continue;
+        dist.photos=(loc&&loc.photos)||[];
+        dist._cloudPhotos=true;
+        await DB.putLocal("releves",dist);
+      }
+      return true;
+    }catch(e){ console.warn("Synchro impossible",e); return false; }
+    finally{ busy=false; }
+  }
+  return {init,push,del,pull,photosDe,actif:()=>on};
+})();
+
+/* ---------- état global ---------- */
+const S = { user:null, entreprise:null, users:[], clients:[], releves:[], current:null, tab:"infos", view:"home", filters:{} };
+const can = p => !!(S.user && (S.user.role==="dg" || (S.user.perms||[]).includes(p)));
+
+async function log(action){
+  const e={id:uid(),ts:Date.now(),user:S.user?S.user.nom:"Système",action};
+  await DB.put("logs",e);
+}
+async function refresh(){
+  S.users=await DB.all("users"); S.clients=await DB.all("clients"); S.releves=await DB.all("releves");
+  S.releves.sort((a,b)=>(b.maj||0)-(a.maj||0));
+  S.clients.sort((a,b)=>(a.nom||"").localeCompare(b.nom||""));
+}
+function mesReleves(){ return can("voir_tous") ? S.releves : S.releves.filter(r=>r.auteurId===S.user.id); }
+
+/* ---------- amorçage ---------- */
+async function boot(){
+  await DB.open();
+  await Cloud.init();
+  if(Cloud.actif()) await Promise.race([Cloud.pull(), new Promise(r=>setTimeout(r,6000))]);
+  let ent = await DB.get("meta","entreprise");
+  if(!ent){
+    ent={id:"entreprise",nom:"AXAIR CLIMATISATION",logo:LOGO,adresse:"",cp:"",ville:"",tel:"",email:"",
+      mentions:"Relevé technique établi sur site — document non contractuel. Concevoir · Installer · Maintenir.",
+      couleur:"#0271FD"};
+    await DB.put("meta",ent);
+  }
+  S.entreprise=ent;
+  const us=await DB.all("users");
+  if(!us.length){
+    await DB.put("users",{id:uid(),nom:"Julien",email:"dg@axair.fr",pass:await sha("axair2026"),
+      role:"dg",perms:ROLES.dg.perms.slice(),actif:true,cree:Date.now(),maj:Date.now(),dernier:null});
+  }
+  const dgu=(await DB.all("users")).find(u=>(u.email||"")==="dg@axair.fr");
+  if(dgu && dgu.nom==="Direction AXAIR"){
+    dgu.nom="Julien"; await DB.put("users",dgu);
+    for(const rr of await DB.all("releves")) if(rr.auteur==="Direction AXAIR"){ rr.auteur="Julien"; await DB.put("releves",rr); }
+  }
+  let compteur=await DB.get("meta","compteur"); if(!compteur) await DB.put("meta",{id:"compteur",n:0});
+  applyTheme();
+  $("#loginLogo").src=ent.logo||LOGO; $("#topLogo").src=ent.logo||LOGO;
+  const sess=LS.get("axair_session");
+  if(sess){ const u=await DB.get("users",sess); if(u&&u.actif){ await startSession(u,false); return; } }
+  $("#login").style.display="flex";
+}
+function applyTheme(){
+  const c=(S.entreprise&&S.entreprise.couleur)||"#0271FD";
+  document.documentElement.style.setProperty("--blue",c);
+}
+async function startSession(u,mark=true){
+  S.user=u; LS.set("axair_session",u.id);
+  if(mark){ u.dernier=Date.now(); await DB.put("users",u); }
+  $("#login").style.display="none"; $("#app").style.display="block";
+  $("#whoName").textContent=u.nom; $("#whoRole").textContent=ROLES[u.role].label;
+  await refresh(); go("home");
+}
+$("#li_go").onclick = async ()=>{
+  const mail=$("#li_mail").value.trim().toLowerCase(), pw=$("#li_pass").value;
+  if(!mail||!pw) return toast("Saisissez votre email et votre mot de passe");
+  const users=await DB.all("users");
+  const u=users.find(x=>(x.email||"").toLowerCase()===mail);
+  if(!u) return toast("Aucun compte avec cette adresse");
+  if(!u.actif) return toast("Ce compte est désactivé");
+  if(u.pass !== await sha(pw)) return toast("Mot de passe incorrect");
+  await startSession(u); await log("s'est connecté");
+};
+$("#li_pass").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#li_go").click(); });
+
+/* ---------- navigation ---------- */
+$$("nav.bottom button").forEach(b=> b.onclick=()=>{
+  const n=b.dataset.nav;
+  if(n==="new"){ nouveauReleve(); return; }
+  go(n);
+});
+function go(view,arg){
+  S.view=view;
+  $$("nav.bottom button").forEach(b=>b.classList.toggle("on",b.dataset.nav===view||(view.startsWith("releve")&&b.dataset.nav==="releves")));
+  $("#tabsHost").innerHTML="";
+  window.scrollTo(0,0);
+  ({home:vHome,releves:vReleves,clients:vClients,client:vClient,profil:vProfil,users:vUsers,admin:vAdmin,
+    entreprise:vEntreprise,journal:vJournal,editeur:vEditeur,rapport:vRapport}[view]||vHome)(arg);
+}
+
+/* ===================== ACCUEIL ===================== */
+function statutBadge(r){ const s=STATUTS[r.statut]||STATUTS.brouillon; return `<span class="badge ${s.c}">${s.l}</span>`; }
+function ligneReleve(r){
+  const c=S.clients.find(c=>c.id===r.clientId);
+  const nom = r.clientNom || (c?((c.societe||"")+" "+(c.nom||"")).trim():"") || "Client non renseigné";
+  const ph = (r.photos&&r.photos[0])?`<img class="thumb" src="${r.photos[0].src}" alt="">`:`<div class="thumb"></div>`;
+  return `<div class="item" onclick="ouvrirReleve('${r.id}')">
+    ${ph}
+    <div class="main">
+      <b>${esc(nom)}</b>
+      <small>${esc(r.ref||"")} · ${fdate(r.date)} · ${esc(objetLabel(r)||"Objet non défini")}</small>
+      <small>${esc([r.adresse,r.ville].filter(Boolean).join(", ")||"Adresse non renseignée")}</small>
+    </div>
+    <div style="text-align:right">${statutBadge(r)}<br><small style="color:var(--muted);font-size:.7rem">${esc(r.auteur||"")}</small></div>
+  </div>`;
+}
+function vHome(){
+  const rs=mesReleves();
+  const brouillons=rs.filter(r=>r.statut==="brouillon"||r.statut==="completer");
+  const termines=rs.filter(r=>r.statut==="termine"||r.statut==="valide");
+  const dernier=rs.slice(0,5);
+  $("#view").innerHTML=`<div class="screen">
+    <div class="hero"><h1>Bonjour ${esc((S.user.nom||"").split(" ")[0])}</h1>
+      <p>${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</p>
+      <div class="tri"></div></div>
+    ${can("creer")?`<button class="btn block" style="margin-bottom:14px" onclick="nouveauReleve()">＋ Nouveau relevé de chantier</button>`:""}
+    <div class="stats">
+      <div class="stat accent"><b>${rs.length}</b><span>Relevés ${can("voir_tous")?"au total":"à mon nom"}</span></div>
+      <div class="stat"><b>${brouillons.length}</b><span>En cours</span></div>
+      <div class="stat"><b>${termines.length}</b><span>Terminés</span></div>
+      <div class="stat"><b>${S.clients.length}</b><span>Clients</span></div>
+    </div>
+    <div class="field"><input class="input" placeholder="Rechercher un client, une adresse, une référence…"
+      onkeydown="if(event.key==='Enter'&&event.target.value.trim()){S.filters={q:event.target.value.trim()};go('releves')}"></div>
+    <div class="card">
+      <div style="display:flex;align-items:center"><h2>Derniers relevés</h2>
+        <button class="btn sm ghost" style="margin-left:auto" onclick="go('releves')">Tout voir</button></div>
+      <div class="tri-sm"></div>
+      ${dernier.length?dernier.map(ligneReleve).join(""):`<div class="empty"><span class="big">▤</span>Aucun relevé pour l'instant.<br>Commencez par en créer un.</div>`}
+    </div>
+    ${brouillons.length?`<div class="card"><h2>À reprendre</h2><div class="tri-sm"></div>${brouillons.slice(0,4).map(ligneReleve).join("")}</div>`:""}
+    <div class="grid2" style="margin-bottom:12px">
+      <button class="btn ghost" onclick="go('clients')">Clients</button>
+      ${can("users")?`<button class="btn ghost" onclick="go('admin')">Administration</button>`:`<button class="btn ghost" onclick="go('profil')">Mon profil</button>`}
+    </div>
+  </div>`;
+}
+
+/* ===================== LISTE DES RELEVÉS ===================== */
+function vReleves(){
+  const f=S.filters||{};
+  const villes=[...new Set(mesReleves().map(r=>r.ville).filter(Boolean))].sort();
+  const users=[...new Set(mesReleves().map(r=>r.auteur).filter(Boolean))].sort();
+  $("#view").innerHTML=`<div class="screen">
+    <div class="screen-head"><div><h1>Relevés</h1><div class="tri-sm"></div></div>
+      ${can("creer")?`<button class="btn sm" onclick="nouveauReleve()">＋ Nouveau</button>`:""}</div>
+    <div class="field"><input class="input" id="f_q" placeholder="Recherche générale" value="${esc(f.q||"")}"></div>
+    <div class="grid2">
+      <div class="field"><label>Statut</label><select class="input" id="f_st">
+        <option value="">Tous</option>${Object.entries(STATUTS).map(([k,v])=>`<option value="${k}" ${f.st===k?"selected":""}>${v.l}</option>`).join("")}</select></div>
+      <div class="field"><label>Type de chantier</label><select class="input" id="f_ob">
+        <option value="">Tous</option>${OBJETS.map(o=>`<option ${f.ob===o?"selected":""}>${o}</option>`).join("")}</select></div>
+      <div class="field"><label>Commune</label><select class="input" id="f_vi">
+        <option value="">Toutes</option>${villes.map(v=>`<option ${f.vi===v?"selected":""}>${esc(v)}</option>`).join("")}</select></div>
+      <div class="field"><label>Utilisateur</label><select class="input" id="f_us">
+        <option value="">Tous</option>${users.map(v=>`<option ${f.us===v?"selected":""}>${esc(v)}</option>`).join("")}</select></div>
+      <div class="field"><label>Du</label><input class="input" type="date" id="f_d1" value="${f.d1||""}"></div>
+      <div class="field"><label>Au</label><input class="input" type="date" id="f_d2" value="${f.d2||""}"></div>
+    </div>
+    <div class="grid2" style="margin-bottom:12px">
+      <button class="btn sm" onclick="appliqueFiltres()">Filtrer</button>
+      <button class="btn sm ghost" onclick="S.filters={};go('releves')">Réinitialiser</button>
+    </div>
+    <div class="card" id="resultats"></div>
+  </div>`;
+  $("#f_q").addEventListener("keydown",e=>{ if(e.key==="Enter") appliqueFiltres(); });
+  rendreResultats();
+}
+function appliqueFiltres(){
+  S.filters={q:$("#f_q").value.trim(),st:$("#f_st").value,ob:$("#f_ob").value,vi:$("#f_vi").value,
+    us:$("#f_us").value,d1:$("#f_d1").value,d2:$("#f_d2").value};
+  rendreResultats();
+}
+function filtrer(){
+  const f=S.filters||{};
+  return mesReleves().filter(r=>{
+    if(f.st&&r.statut!==f.st) return false;
+    if(f.ob&&r.objet!==f.ob) return false;
+    if(f.vi&&r.ville!==f.vi) return false;
+    if(f.us&&r.auteur!==f.us) return false;
+    if(f.d1&&(r.date||"")<f.d1) return false;
+    if(f.d2&&(r.date||"")>f.d2) return false;
+    if(f.q){ const q=f.q.toLowerCase();
+      const blob=[r.ref,r.clientNom,r.societe,r.adresse,r.ville,r.cp,r.objet,r.objetAutre,r.adressePost,r.villePost,r.auteur,r.notes,r.tel,r.email]
+        .concat((r.travaux||[]).map(t=>t.designation)).join(" ").toLowerCase();
+      if(!blob.includes(q)) return false; }
+    return true;
+  });
+}
+function rendreResultats(){
+  const rs=filtrer(); const h=$("#resultats"); if(!h) return;
+  h.innerHTML = rs.length
+    ? `<div style="display:flex;align-items:center;margin-bottom:8px"><b style="color:var(--navy)">${rs.length} relevé${rs.length>1?"s":""}</b>
+       ${can("exporter")?`<button class="btn sm ghost" style="margin-left:auto" onclick="exportCSV()">Export CSV</button>`:""}</div>`
+      + rs.map(ligneReleve).join("")
+    : `<div class="empty"><span class="big">⌕</span>Aucun relevé ne correspond.<br>Élargissez vos filtres.</div>`;
+}
+function exportCSV(){
+  const rs=filtrer();
+  const head=["Référence","Date","Client","Société","Adresse","CP","Ville","Objet","Utilisateur","Statut","Photos","Travaux"];
+  const lines=[head.join(";")].concat(rs.map(r=>[r.ref,r.date,r.clientNom,r.societe,r.adresse,r.cp,r.ville,objetLabel(r),
+    r.auteur,(STATUTS[r.statut]||{}).l,(r.photos||[]).length,(r.travaux||[]).length]
+    .map(v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"').join(";")));
+  const blob=new Blob(["\uFEFF"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="RELEVES_AXAIR_"+today().replace(/-/g,"")+".csv"; a.click();
+  toast("Export CSV téléchargé");
+}
+
+/* ===================== CLIENTS ===================== */
+function vClients(){
+  $("#view").innerHTML=`<div class="screen">
+    <div class="screen-head"><div><h1>Clients</h1><div class="tri-sm"></div></div>
+      ${can("clients")?`<button class="btn sm" onclick="editClient()">＋ Client</button>`:""}</div>
+    <div class="field"><input class="input" id="c_q" placeholder="Rechercher un client" oninput="listeClients()"></div>
+    <div class="card" id="listeC"></div></div>`;
+  listeClients();
+}
+function listeClients(){
+  const q=($("#c_q")?.value||"").toLowerCase();
+  const cs=S.clients.filter(c=>!q||[c.nom,c.prenom,c.societe,c.ville,c.tel,c.email].join(" ").toLowerCase().includes(q));
+  $("#listeC").innerHTML = cs.length? cs.map(c=>{
+    const n=S.releves.filter(r=>r.clientId===c.id).length;
+    return `<div class="item" onclick="go('client','${c.id}')"><div class="main">
+      <b>${esc(c.societe||((c.prenom||"")+" "+(c.nom||"")).trim()||"Client")}</b>
+      <small>${esc([c.prenom,c.nom].filter(Boolean).join(" "))} ${c.tel?"· "+esc(c.tel):""}</small>
+      <small>${esc([c.adresse,c.ville].filter(Boolean).join(", ")||"—")}</small></div>
+      <div style="text-align:right;color:var(--muted);font-size:.78rem">${n} relevé${n>1?"s":""}</div></div>`;
+  }).join("") : `<div class="empty"><span class="big">☰</span>Aucun client enregistré.<br>Ajoutez-en un pour pré-remplir vos relevés.</div>`;
+}
+function vClient(id){
+  const c=S.clients.find(x=>x.id===id); if(!c) return go("clients");
+  const rs=S.releves.filter(r=>r.clientId===c.id);
+  $("#view").innerHTML=`<div class="screen">
+    <button class="btn sm ghost" onclick="go('clients')">← Clients</button>
+    <h1 style="margin-top:12px">${esc(c.societe||((c.prenom||"")+" "+(c.nom||"")).trim())}</h1><div class="tri-sm"></div>
+    <div class="card">
+      <div class="kvlist" style="font-size:.9rem">
+        <div><b>Contact</b> ${esc([c.prenom,c.nom].filter(Boolean).join(" ")||"—")}</div>
+        <div><b>Téléphone</b> ${c.tel?`<a href="tel:${esc(c.tel)}">${esc(c.tel)}</a>`:"—"}</div>
+        <div><b>Email</b> ${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:"—"}</div>
+        <div><b>Adresse</b> ${esc([c.adresse,c.cp,c.ville].filter(Boolean).join(" ")||"—")}</div>
+      </div>
+      ${c.notes?`<p style="margin-top:10px;color:var(--muted);font-size:.88rem">${esc(c.notes)}</p>`:""}
+      <div class="grid2" style="margin-top:12px">
+        ${can("clients")?`<button class="btn sm ghost" onclick="editClient('${c.id}')">Modifier</button>`:""}
+        ${can("creer")?`<button class="btn sm" onclick="nouveauReleve('${c.id}')">Nouveau relevé</button>`:""}
+      </div>
+    </div>
+    <div class="card"><h2>Historique des relevés</h2><div class="tri-sm"></div>
+      ${rs.length?rs.map(ligneReleve).join(""):`<div class="empty">Aucun relevé pour ce client.</div>`}</div>
+  </div>`;
+}
+function editClient(id){
+  const c=id?S.clients.find(x=>x.id===id):{id:uid(),nom:"",prenom:"",societe:"",tel:"",email:"",adresse:"",cp:"",ville:"",notes:""};
+  sheet(`<h2>${id?"Modifier le client":"Nouveau client"}</h2><div class="tri-sm"></div>
+    <div class="field"><label>Société</label><input class="input" id="cl_soc" value="${esc(c.societe)}"></div>
+    <div class="grid2">
+      <div class="field"><label>Nom</label><input class="input" id="cl_nom" value="${esc(c.nom)}"></div>
+      <div class="field"><label>Prénom</label><input class="input" id="cl_pre" value="${esc(c.prenom)}"></div>
+      <div class="field"><label>Téléphone</label><input class="input" type="tel" id="cl_tel" value="${esc(c.tel)}"></div>
+      <div class="field"><label>Email</label><input class="input" type="email" id="cl_mail" value="${esc(c.email)}"></div>
+    </div>
+    <div class="field"><label>Adresse</label><input class="input" id="cl_adr" value="${esc(c.adresse)}"></div>
+    <div class="grid2">
+      <div class="field"><label>Code postal</label><input class="input" inputmode="numeric" id="cl_cp" value="${esc(c.cp)}"></div>
+      <div class="field"><label>Ville</label><input class="input" id="cl_vil" value="${esc(c.ville)}"></div>
+    </div>
+    <div class="field"><label>Notes internes</label><textarea class="input" id="cl_not">${esc(c.notes)}</textarea></div>
+    <button class="btn block" onclick="saveClient('${c.id}',${!!id})">Enregistrer le client</button>
+    ${id?`<button class="btn block ghost danger" style="margin-top:8px;background:#fff;color:var(--red);border-color:#FBD5D5" onclick="delClient('${c.id}')">Supprimer ce client</button>`:""}`);
+}
+async function saveClient(id,exist){
+  const c={id, societe:$("#cl_soc").value.trim(), nom:$("#cl_nom").value.trim(), prenom:$("#cl_pre").value.trim(),
+    tel:$("#cl_tel").value.trim(), email:$("#cl_mail").value.trim(), adresse:$("#cl_adr").value.trim(),
+    cp:$("#cl_cp").value.trim(), ville:$("#cl_vil").value.trim(), notes:$("#cl_not").value.trim(), maj:Date.now()};
+  if(!c.nom&&!c.societe) return toast("Indiquez au moins un nom ou une société");
+  await DB.put("clients",c); await log((exist?"a modifié":"a créé")+" le client "+(c.societe||c.nom));
+  await refresh(); closeSheet(); toast("Client enregistré"); go(S.view==="client"?"client":"clients",id);
+}
+async function delClient(id){
+  if(!confirm("Supprimer ce client ? Les relevés liés sont conservés.")) return;
+  await DB.del("clients",id); await log("a supprimé un client"); await refresh(); closeSheet(); go("clients");
+}
+
+/* ===================== FEUILLES MODALES ===================== */
+let _scrollY=0;
+function lockScroll(){ _scrollY=window.scrollY; document.body.style.top=(-_scrollY)+"px"; document.body.classList.add("lock"); }
+function unlockScroll(){ document.body.classList.remove("lock"); document.body.style.top=""; window.scrollTo(0,_scrollY); }
+function sheet(html){
+  lockScroll();
+  $("#modals").innerHTML=`<div class="sheet" onclick="if(event.target===this)closeSheet()">
+    <div class="inner"><div class="handle"></div>${html}</div></div>`;
+}
+function closeSheet(){ $("#modals").innerHTML=""; unlockScroll(); }
+
+/* ===================== PROFIL ===================== */
+function vProfil(){
+  const u=S.user;
+  $("#view").innerHTML=`<div class="screen">
+    <h1>Mon profil</h1><div class="tri-sm"></div>
+    <div class="card">
+      <div class="item"><div class="main"><b>${esc(u.nom)}</b><small>${esc(u.email)}</small>
+        <small>${ROLES[u.role].label}</small></div></div>
+      <div style="margin-top:10px;font-size:.82rem;color:var(--muted)">
+        Dernière connexion : ${fdt(u.dernier)}<br>
+        Relevés à mon nom : ${S.releves.filter(r=>r.auteurId===u.id).length}<br>
+        Droits : ${(u.role==="dg"?ROLES.dg.perms:u.perms||[]).map(p=>PERM_LABELS[p]).join(", ")||"lecture seule"}
+      </div>
+    </div>
+    <div class="card"><h2>Mot de passe</h2><div class="tri-sm"></div>
+      <div class="field"><label>Nouveau mot de passe</label><input class="input" type="password" id="p1"></div>
+      <div class="field"><label>Confirmer</label><input class="input" type="password" id="p2"></div>
+      <button class="btn block" onclick="changePass()">Modifier le mot de passe</button></div>
+    <div class="card"><h2>Application</h2><div class="tri-sm"></div>
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:10px">
+        Stockage : ${DB.isMem()?"mémoire de session (mode restreint)":"base locale de l'appareil"} ·
+        État : <b id="netState">${navigator.onLine?"en ligne":"hors connexion"}</b><br>
+        Cloud : <b>${Cloud.actif()?"Firebase connecté ("+FIREBASE_CONFIG.projectId+")":"non configuré — données locales uniquement"}</b></div>
+      ${Cloud.actif()?`<button class="btn sm block" style="margin-bottom:10px" onclick="synchroniser()">Synchroniser maintenant</button>`:""}
+      <div class="grid2">
+        <button class="btn sm ghost" onclick="sauvegardeJSON()">Sauvegarde .json</button>
+        <button class="btn sm ghost" onclick="$('#restoreFile').click()">Restaurer</button>
+      </div>
+      <input type="file" id="restoreFile" accept="application/json" class="hidden" onchange="restaureJSON(event)">
+    </div>
+    ${can("users")?`<button class="btn block navy" style="margin-bottom:10px" onclick="go('admin')">Espace administration</button>`:""}
+    <button class="btn block ghost" onclick="logout()">Se déconnecter</button>
+  </div>`;
+}
+async function changePass(){
+  const a=$("#p1").value,b=$("#p2").value;
+  if(a.length<6) return toast("6 caractères minimum");
+  if(a!==b) return toast("Les deux mots de passe diffèrent");
+  S.user.pass=await sha(a); await DB.put("users",S.user); await log("a changé son mot de passe");
+  toast("Mot de passe modifié"); $("#p1").value=$("#p2").value="";
+}
+async function synchroniser(){
+  toast("Synchronisation…");
+  for(const r of S.releves) Cloud.push("releves",r);
+  for(const c of S.clients) Cloud.push("clients",c);
+  for(const u of S.users) Cloud.push("users",u);
+  const ok=await Cloud.pull(); await refresh();
+  toast(ok?"Synchronisation terminée":"Synchronisation impossible"); vProfil();
+}
+function logout(){ LS.del("axair_session"); location.reload(); }
+async function sauvegardeJSON(){
+  const data={entreprise:S.entreprise,users:await DB.all("users"),clients:await DB.all("clients"),
+    releves:await DB.all("releves"),logs:await DB.all("logs"),export:Date.now()};
+  const b=new Blob([JSON.stringify(data)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(b);
+  a.download="SAUVEGARDE_AXAIR_"+today().replace(/-/g,"")+".json"; a.click();
+  toast("Sauvegarde téléchargée");
+}
+async function restaureJSON(e){
+  const f=e.target.files[0]; if(!f) return;
+  if(!confirm("Restaurer cette sauvegarde ? Les données actuelles seront fusionnées.")) return;
+  const d=JSON.parse(await f.text());
+  for(const k of ["users","clients","releves","logs"]) for(const o of (d[k]||[])) await DB.put(k,o);
+  if(d.entreprise){ d.entreprise.id="entreprise"; await DB.put("meta",d.entreprise); S.entreprise=d.entreprise; }
+  await refresh(); toast("Sauvegarde restaurée"); go("home");
+}
+
+/* ===================== ADMINISTRATION ===================== */
+async function vAdmin(){
+  if(!can("users")) return go("home");
+  const logs=(await DB.all("logs")).sort((a,b)=>b.ts-a.ts).slice(0,8);
+  const parUser=S.users.map(u=>({u,n:S.releves.filter(r=>r.auteurId===u.id).length})).sort((a,b)=>b.n-a.n);
+  const enCours=S.releves.filter(r=>r.statut==="brouillon"||r.statut==="completer").length;
+  const finis=S.releves.filter(r=>r.statut==="termine"||r.statut==="valide").length;
+  $("#view").innerHTML=`<div class="screen">
+    <h1>Administration</h1><div class="tri-sm"></div>
+    <div class="stats">
+      <div class="stat accent"><b>${S.releves.length}</b><span>Relevés créés</span></div>
+      <div class="stat"><b>${finis}</b><span>Dossiers terminés</span></div>
+      <div class="stat"><b>${enCours}</b><span>En attente</span></div>
+      <div class="stat"><b>${S.users.filter(u=>u.actif).length}</b><span>Utilisateurs actifs</span></div>
+    </div>
+    <div class="card"><h2>Production par utilisateur</h2><div class="tri-sm"></div>
+      ${parUser.map(({u,n})=>`<div class="item"><div class="main"><b>${esc(u.nom)}</b>
+        <small>${ROLES[u.role].label} · dernière connexion ${fdt(u.dernier)}</small></div>
+        <div style="text-align:right"><b style="color:var(--navy);font-size:1.2rem">${n}</b>
+        <small style="color:var(--muted);display:block;font-size:.7rem">relevés</small></div></div>`).join("")}</div>
+    <div class="card"><h2>Activité récente</h2><div class="tri-sm"></div>
+      ${logs.length?logs.map(l=>`<div class="item"><div class="main"><b style="font-weight:600;color:var(--ink);white-space:normal">${esc(l.user)} ${esc(l.action)}</b>
+        <small>${fdt(l.ts)}</small></div></div>`).join(""):`<div class="empty">Aucune activité enregistrée.</div>`}
+      <button class="btn sm ghost block" style="margin-top:10px" onclick="go('journal')">Voir tout le journal</button></div>
+    <div class="card"><h2>Derniers clients ajoutés</h2><div class="tri-sm"></div>
+      ${S.clients.slice().sort((a,b)=>(b.maj||0)-(a.maj||0)).slice(0,4).map(c=>`<div class="item" onclick="go('client','${c.id}')">
+        <div class="main"><b>${esc(c.societe||c.nom)}</b><small>${esc([c.ville,c.tel].filter(Boolean).join(" · "))}</small></div></div>`).join("")
+        ||`<div class="empty">Aucun client.</div>`}</div>
+    <div class="grid2">
+      <button class="btn" onclick="go('users')">Utilisateurs</button>
+      ${can("entreprise")?`<button class="btn ghost" onclick="go('entreprise')">Paramètres entreprise</button>`:""}
+    </div>
+  </div>`;
+}
+async function vJournal(){
+  const logs=(await DB.all("logs")).sort((a,b)=>b.ts-a.ts).slice(0,300);
+  $("#view").innerHTML=`<div class="screen">
+    <button class="btn sm ghost" onclick="go('admin')">← Administration</button>
+    <h1 style="margin-top:12px">Journal d'activité</h1><div class="tri-sm"></div>
+    <div class="card">${logs.map(l=>`<div class="item"><div class="main">
+      <b style="font-weight:600;color:var(--ink);white-space:normal">${esc(l.user)} ${esc(l.action)}</b>
+      <small>${fdt(l.ts)}</small></div></div>`).join("")||`<div class="empty">Journal vide.</div>`}</div></div>`;
+}
+function vUsers(){
+  if(!can("users")) return go("home");
+  $("#view").innerHTML=`<div class="screen">
+    <div class="screen-head"><div><h1>Utilisateurs</h1><div class="tri-sm"></div></div>
+      <button class="btn sm" onclick="editUser()">＋ Utilisateur</button></div>
+    <div class="card">${S.users.map(u=>`<div class="item" onclick="editUser('${u.id}')">
+      <div class="main"><b>${esc(u.nom)} ${u.actif?"":`<span class="badge b-archive">désactivé</span>`}</b>
+        <small>${esc(u.email)}</small>
+        <small>${ROLES[u.role].label} · ${S.releves.filter(r=>r.auteurId===u.id).length} relevés</small></div>
+      <div style="text-align:right;color:var(--muted);font-size:.72rem">${fdt(u.dernier)}</div></div>`).join("")}</div>
+  </div>`;
+}
+function editUser(id){
+  const u=id?S.users.find(x=>x.id===id):{id:uid(),nom:"",email:"",role:"technicien",perms:ROLES.technicien.perms.slice(),actif:true};
+  sheet(`<h2>${id?"Modifier l'utilisateur":"Nouvel utilisateur"}</h2><div class="tri-sm"></div>
+    <div class="field"><label>Nom et prénom</label><input class="input" id="u_nom" value="${esc(u.nom)}"></div>
+    <div class="field"><label>Adresse email (identifiant)</label><input class="input" type="email" id="u_mail" value="${esc(u.email)}"></div>
+    <div class="field"><label>Profil</label><select class="input" id="u_role" onchange="majPerms()">
+      ${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${u.role===k?"selected":""}>${v.label}</option>`).join("")}</select></div>
+    <div class="field"><label>Autorisations</label><div id="u_perms">
+      ${Object.entries(PERM_LABELS).map(([k,l])=>`<label class="switch"><input type="checkbox" value="${k}"
+        ${(u.perms||[]).includes(k)?"checked":""}> ${l}</label>`).join("")}</div></div>
+    <label class="switch"><input type="checkbox" id="u_actif" ${u.actif?"checked":""}> Compte actif</label>
+    <div class="field" style="margin-top:10px"><label>${id?"Réinitialiser le mot de passe (laisser vide pour conserver)":"Mot de passe"}</label>
+      <input class="input" type="text" id="u_pass" placeholder="${id?"nouveau mot de passe":"ex. axair2026"}"></div>
+    <button class="btn block" onclick="saveUser('${u.id}',${!!id})">Enregistrer</button>
+    ${id&&u.id!==S.user.id?`<button class="btn block" style="margin-top:8px;background:#fff;color:var(--red);border:1px solid #FBD5D5"
+      onclick="delUser('${u.id}')">Supprimer cet utilisateur</button>`:""}`);
+}
+function majPerms(){
+  const r=$("#u_role").value;
+  $$("#u_perms input").forEach(i=>i.checked=ROLES[r].perms.includes(i.value));
+}
+async function saveUser(id,exist){
+  const nom=$("#u_nom").value.trim(), mail=$("#u_mail").value.trim().toLowerCase();
+  if(!nom||!mail) return toast("Nom et email obligatoires");
+  const dup=S.users.find(x=>x.email===mail&&x.id!==id); if(dup) return toast("Cette adresse est déjà utilisée");
+  const old=S.users.find(x=>x.id===id);
+  const pw=$("#u_pass").value.trim();
+  if(!exist&&!pw) return toast("Définissez un mot de passe");
+  const u={id,nom,email:mail,role:$("#u_role").value,
+    perms:$$("#u_perms input").filter(i=>i.checked).map(i=>i.value),
+    actif:$("#u_actif").checked, cree:old?old.cree:Date.now(), dernier:old?old.dernier:null, maj:Date.now(),
+    pass: pw? await sha(pw) : (old?old.pass:"")};
+  await DB.put("users",u); await log((exist?"a modifié":"a créé")+" l'utilisateur "+nom);
+  await refresh(); closeSheet(); toast("Utilisateur enregistré"); go("users");
+}
+async function delUser(id){
+  if(!confirm("Supprimer définitivement cet utilisateur ?")) return;
+  await DB.del("users",id); await log("a supprimé un utilisateur"); await refresh(); closeSheet(); go("users");
+}
+
+/* ===================== PARAMÈTRES ENTREPRISE ===================== */
+function vEntreprise(){
+  if(!can("entreprise")) return go("home");
+  const e=S.entreprise;
+  $("#view").innerHTML=`<div class="screen">
+    <button class="btn sm ghost" onclick="go('admin')">← Administration</button>
+    <h1 style="margin-top:12px">Paramètres entreprise</h1><div class="tri-sm"></div>
+    <div class="card">
+      <div style="background:var(--navy);border-radius:12px;padding:16px;text-align:center;margin-bottom:12px">
+        <img src="${e.logo||LOGO}" style="max-width:200px;max-height:70px;filter:brightness(0) invert(1)"></div>
+      <button class="btn sm ghost block" onclick="$('#logoFile').click()">Remplacer le logo</button>
+      <input type="file" id="logoFile" accept="image/*" class="hidden" onchange="majLogo(event)">
+      <div class="field" style="margin-top:12px"><label>Nom de l'entreprise</label><input class="input" id="e_nom" value="${esc(e.nom)}"></div>
+      <div class="field"><label>Adresse</label><input class="input" id="e_adr" value="${esc(e.adresse)}"></div>
+      <div class="grid2">
+        <div class="field"><label>Code postal</label><input class="input" id="e_cp" value="${esc(e.cp)}"></div>
+        <div class="field"><label>Ville</label><input class="input" id="e_vil" value="${esc(e.ville)}"></div>
+        <div class="field"><label>Téléphone</label><input class="input" id="e_tel" value="${esc(e.tel)}"></div>
+        <div class="field"><label>Email</label><input class="input" id="e_mail" value="${esc(e.email)}"></div>
+      </div>
+      <div class="field"><label>Mentions en bas des rapports</label><textarea class="input" id="e_men">${esc(e.mentions)}</textarea></div>
+      <div class="field"><label>Couleur principale</label><input class="input" type="color" id="e_col" value="${e.couleur||"#0271FD"}" style="height:50px"></div>
+      <button class="btn block" onclick="saveEntreprise()">Enregistrer les paramètres</button>
+    </div></div>`;
+}
+async function majLogo(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  S.entreprise.logo=await compress(f,600,0.9,true);
+  await DB.put("meta",S.entreprise); $("#topLogo").src=S.entreprise.logo; toast("Logo mis à jour"); vEntreprise();
+}
+async function saveEntreprise(){
+  Object.assign(S.entreprise,{nom:$("#e_nom").value.trim(),adresse:$("#e_adr").value.trim(),cp:$("#e_cp").value.trim(),
+    ville:$("#e_vil").value.trim(),tel:$("#e_tel").value.trim(),email:$("#e_mail").value.trim(),
+    mentions:$("#e_men").value.trim(),couleur:$("#e_col").value});
+  await DB.put("meta",S.entreprise); applyTheme(); await log("a modifié les paramètres entreprise");
+  toast("Paramètres enregistrés");
+}
+
+/* ===================== RELEVÉ : CRÉATION / OUVERTURE ===================== */
+async function nextRef(){
+  const c=await DB.get("meta","compteur")||{id:"compteur",n:0};
+  c.n=(c.n||0)+1; await DB.put("meta",c);
+  return "AX-"+new Date().getFullYear()+"-"+String(c.n).padStart(4,"0");
+}
+async function nouveauReleve(clientId){
+  if(!can("creer")) return toast("Votre profil ne permet pas de créer un relevé");
+  const c=clientId?S.clients.find(x=>x.id===clientId):null;
+  const r={id:uid(), ref:await nextRef(), date:today(), heure:nowHM(), statut:"brouillon",
+    auteurId:S.user.id, auteur:S.user.nom, clientId:c?c.id:null,
+    clientNom:c?((c.prenom||"")+" "+(c.nom||"")).trim():"", societe:c?c.societe:"", tel:c?c.tel:"", email:c?c.email:"",
+    adresse:c?c.adresse:"", cp:c?c.cp:"", ville:c?c.ville:"", objet:"", objetAutre:"",
+    adressePost:c?c.adresse:"", cpPost:c?c.cp:"", villePost:c?c.ville:"", notes:"",
+    photos:[], travaux:[], croquis:null, croquisShapes:[], cree:Date.now(), maj:Date.now(), sync:navigator.onLine};
+  await DB.put("releves",r); await log("a créé le relevé "+r.ref); await refresh();
+  S.current=r; S.tab="infos"; go("editeur");
+}
+async function ouvrirReleve(id){
+  const r=await DB.get("releves",id); if(!r) return toast("Relevé introuvable");
+  if(r._cloudPhotos && Cloud.actif() && navigator.onLine){
+    toast("Chargement des photos…");
+    try{ const ph=await Cloud.photosDe(id); if(ph.length||!r.photos.length) r.photos=ph; }catch(e){}
+    delete r._cloudPhotos; await DB.putLocal("releves",r);
+  }
+  S.current=r; S.tab="infos"; go("editeur");
+}
+let saveTimer=null;
+function touchSave(){
+  const f=$("#saveflag"); if(f) f.textContent="Enregistrement…";
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    S.current.maj=Date.now(); S.current.sync=navigator.onLine;
+    await DB.put("releves",S.current); await refresh();
+    const g=$("#saveflag"); if(g) g.textContent = navigator.onLine? "Enregistré ✓" : "Enregistré localement ✓";
+  },700);
+}
+function bind(id,key){
+  const el=$("#"+id); if(!el) return;
+  el.addEventListener("input",()=>{ S.current[key]=el.value; touchSave(); });
+}
+
+/* ===================== ÉDITEUR ===================== */
+function vEditeur(){
+  const r=S.current; if(!r) return go("releves");
+  const tabs=[["infos","Infos"],["photos","Photos ("+(r.photos||[]).length+")"],["travaux","Travaux ("+(r.travaux||[]).length+")"],
+    ["notes","Notes"],["croquis","Croquis"],["rapport","Rapport"]];
+  $("#tabsHost").innerHTML=`<div class="tabs">${tabs.map(([k,l])=>
+    `<button class="tab ${S.tab===k?"on":""}" onclick="S.tab='${k}';vEditeur()">${l}</button>`).join("")}</div>`;
+  $("#view").innerHTML=`<div class="screen">
+    <div class="reftop noprint">
+      <button class="back" onclick="go('releves')">←</button>
+      <div class="rt-main"><b>${esc(r.ref)}</b>
+        <span class="saveflag" id="saveflag">${fdate(r.date)}</span></div>
+      ${statutBadge(r)}
+    </div>
+    <div id="tabBody"></div></div>`;
+  ({infos:tInfos,photos:tPhotos,travaux:tTravaux,notes:tNotes,croquis:tCroquis,rapport:tRapport}[S.tab])();
+}
+
+/* ---------- onglet INFOS ---------- */
+function tInfos(){
+  const r=S.current;
+  $("#tabBody").innerHTML=`
+  <div class="card"><h2>Client</h2><div class="tri-sm"></div>
+    <div class="field"><label>Client enregistré</label>
+      <select class="input" id="i_cli" onchange="lierClient(this.value)">
+        <option value="">— Nouveau client / saisie libre —</option>
+        ${S.clients.map(c=>`<option value="${c.id}" ${r.clientId===c.id?"selected":""}>${esc(c.societe||((c.prenom||"")+" "+c.nom))}</option>`).join("")}
+      </select></div>
+    <div class="grid2">
+      <div class="field"><label>Nom</label><input class="input" id="i_nom" value="${esc(r.clientNom)}"></div>
+      <div class="field"><label>Société</label><input class="input" id="i_soc" value="${esc(r.societe)}"></div>
+      <div class="field"><label>Téléphone</label><input class="input" type="tel" id="i_tel" value="${esc(r.tel)}"></div>
+      <div class="field"><label>Email</label><input class="input" type="email" id="i_mail" value="${esc(r.email)}"></div>
+    </div>
+    <div class="field"><label>Adresse postale (facturation / courrier)</label>
+      <input class="input" id="i_padr" value="${esc(r.adressePost||"")}" placeholder="ex. 12 rue des Lilas"></div>
+    <div class="grid2">
+      <div class="field"><label>Code postal</label><input class="input" inputmode="numeric" id="i_pcp" value="${esc(r.cpPost||"")}"></div>
+      <div class="field"><label>Ville</label><input class="input" id="i_pvil" value="${esc(r.villePost||"")}"></div>
+    </div>
+    <button class="btn sm ghost block" style="margin-bottom:10px" onclick="copierAdresseChantier()">Identique à l'adresse du chantier</button>
+    ${can("clients")?`<button class="btn sm ghost block" onclick="creerClientDepuisReleve()">Enregistrer comme fiche client</button>`:""}
+  </div>
+  <div class="card"><h2>Chantier</h2><div class="tri-sm"></div>
+    <div class="field"><label>Adresse du chantier</label><input class="input" id="i_adr" value="${esc(r.adresse)}"></div>
+    <div class="grid2">
+      <div class="field"><label>Code postal</label><input class="input" inputmode="numeric" id="i_cp" value="${esc(r.cp)}"></div>
+      <div class="field"><label>Ville</label><input class="input" id="i_vil" value="${esc(r.ville)}"></div>
+      <div class="field"><label>Date du relevé</label><input class="input" type="date" id="i_date" value="${r.date||""}"></div>
+      <div class="field"><label>Heure</label><input class="input" type="time" id="i_heure" value="${r.heure||""}"></div>
+    </div>
+    <div class="field"><label>Objet du chantier</label>
+      <div class="chips">${OBJETS.map(o=>`<button class="chip ${r.objet===o?"on":""}" onclick="setObjet('${o.replace(/'/g,"\\'")}')">${o}</button>`).join("")}</div></div>
+    ${r.objet==="Autre"?`<div class="field"><label>Préciser l'objet du chantier</label>
+      <input class="input" id="i_objautre" value="${esc(r.objetAutre||"")}" placeholder="ex. Désenfumage, rideau d'air chaud…"></div>`:""}
+    <div class="field"><label>Relevé effectué par</label><input class="input" id="i_aut" value="${esc(r.auteur)}"></div>
+    <div class="field"><label>Statut</label><select class="input" id="i_st">
+      ${Object.entries(STATUTS).map(([k,v])=>`<option value="${k}" ${r.statut===k?"selected":""}>${v.l}</option>`).join("")}</select></div>
+  </div>
+  ${can("supprimer")?`<button class="btn block" style="background:#fff;color:var(--red);border:1px solid #FBD5D5;margin-bottom:14px"
+    onclick="supprimerReleve()">Supprimer ce relevé</button>`:""}`;
+  [["i_nom","clientNom"],["i_soc","societe"],["i_tel","tel"],["i_mail","email"],["i_adr","adresse"],
+   ["i_cp","cp"],["i_vil","ville"],["i_date","date"],["i_heure","heure"],["i_aut","auteur"],
+   ["i_padr","adressePost"],["i_pcp","cpPost"],["i_pvil","villePost"],["i_objautre","objetAutre"]].forEach(([a,b])=>bind(a,b));
+  $("#i_st").addEventListener("change",e=>{ S.current.statut=e.target.value; touchSave(); vEditeur(); });
+}
+function setObjet(o){ S.current.objet=o; touchSave(); tInfos(); if(o==="Autre") setTimeout(()=>$("#i_objautre")&&$("#i_objautre").focus(),60); }
+function objetLabel(r){ return (r.objet==="Autre" && (r.objetAutre||"").trim()) ? r.objetAutre.trim() : (r.objet||""); }
+function copierAdresseChantier(){
+  const r=S.current; r.adressePost=r.adresse||""; r.cpPost=r.cp||""; r.villePost=r.ville||"";
+  touchSave(); tInfos(); toast("Adresse postale reprise du chantier");
+}
+function lierClient(id){
+  const r=S.current, c=S.clients.find(x=>x.id===id);
+  r.clientId=id||null;
+  if(c){ r.clientNom=((c.prenom||"")+" "+(c.nom||"")).trim(); r.societe=c.societe||""; r.tel=c.tel||"";
+    r.email=c.email||""; r.adresse=c.adresse||""; r.cp=c.cp||""; r.ville=c.ville||"";
+    r.adressePost=c.adresse||""; r.cpPost=c.cp||""; r.villePost=c.ville||""; }
+  touchSave(); tInfos(); toast(c?"Informations client reprises":"Saisie libre");
+}
+async function creerClientDepuisReleve(){
+  const r=S.current;
+  if(!r.clientNom&&!r.societe) return toast("Renseignez d'abord un nom ou une société");
+  const c={id:uid(),societe:r.societe,nom:r.clientNom,prenom:"",tel:r.tel,email:r.email,
+    adresse:r.adressePost||r.adresse,cp:r.cpPost||r.cp,ville:r.villePost||r.ville,notes:"",maj:Date.now()};
+  await DB.put("clients",c); r.clientId=c.id; touchSave(); await refresh();
+  await log("a créé le client "+(c.societe||c.nom)); toast("Fiche client créée"); tInfos();
+}
+async function supprimerReleve(){
+  if(!confirm("Supprimer définitivement ce relevé et ses photos ?")) return;
+  await DB.del("releves",S.current.id); await log("a supprimé le relevé "+S.current.ref);
+  S.current=null; await refresh(); go("releves"); toast("Relevé supprimé");
+}
+
+/* ---------- compression image ---------- */
+function compress(file,max=1600,q=0.72,keepPng=false){
+  return new Promise(res=>{
+    const fr=new FileReader();
+    fr.onload=()=>{ const img=new Image();
+      img.onload=()=>{ let{width:w,height:h}=img; const s=Math.min(1,max/Math.max(w,h));
+        const cv=document.createElement("canvas"); cv.width=Math.round(w*s); cv.height=Math.round(h*s);
+        const cx=cv.getContext("2d"); cx.drawImage(img,0,0,cv.width,cv.height);
+        res(cv.toDataURL(keepPng?"image/png":"image/jpeg",q)); };
+      img.onerror=()=>res(fr.result); img.src=fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ---------- onglet PHOTOS ---------- */
+function tPhotos(){
+  const r=S.current;
+  $("#tabBody").innerHTML=`
+  <div class="capture">
+    <button class="btn" onclick="$('#camIn').click()">📷 Prendre une photo<small>appareil arrière</small></button>
+    <button class="btn ghost" onclick="$('#galIn').click()">🖼 Depuis la galerie<small>sélection multiple</small></button>
+  </div>
+  <input type="file" id="camIn" class="hidden" accept="image/*" capture="environment" onchange="addPhotos(event)">
+  <input type="file" id="galIn" class="hidden" accept="image/*" multiple onchange="addPhotos(event)">
+  ${(r.photos||[]).length? `<div class="photogrid">${r.photos.map((p,i)=>`
+    <div class="photo prio-${p.prio||3}">
+      <img src="${p.src}" onclick="voirPhoto(${i})" alt="${esc(p.legende)}">
+      <div class="meta">
+        <div class="cap">${esc(p.legende||"Sans légende")}</div>
+        <div class="nt">${esc(p.note||(p.cat?p.cat:"Aucune note technique"))}</div>
+      </div>
+      <div class="acts">
+        <button title="Légende et notes" onclick="editPhoto(${i})">✎</button>
+        <button title="Annoter" onclick="annoter(${i})">✍</button>
+        <button title="Monter" onclick="movePhoto(${i},-1)">↑</button>
+        <button title="Descendre" onclick="movePhoto(${i},1)">↓</button>
+        <button title="Supprimer" onclick="delPhoto(${i})">🗑</button>
+      </div></div>`).join("")}</div>`
+    : `<div class="empty"><span class="big">📷</span>Aucune photo.<br>Prenez vos clichés d'unité extérieure, d'intérieur et de passage de liaisons.</div>`}`;
+}
+async function addPhotos(ev){
+  const files=[...ev.target.files]; if(!files.length) return;
+  toast("Traitement des photos…");
+  for(const f of files){
+    const src=await compress(f);
+    S.current.photos.push({id:uid(),src,orig:src,legende:"",note:"",cat:"",emplacement:"",prio:3,obs:"",shapes:[]});
+  }
+  ev.target.value=""; touchSave(); vEditeur();
+  toast(files.length+" photo"+(files.length>1?"s ajoutées":" ajoutée"));
+}
+function movePhoto(i,d){
+  const p=S.current.photos, j=i+d; if(j<0||j>=p.length) return;
+  [p[i],p[j]]=[p[j],p[i]]; touchSave(); tPhotos();
+}
+function delPhoto(i){
+  if(!confirm("Supprimer cette photo ?")) return;
+  S.current.photos.splice(i,1); touchSave(); vEditeur();
+}
+function editPhoto(i){
+  const p=S.current.photos[i];
+  sheet(`<h2>Photo ${i+1}</h2><div class="tri-sm"></div>
+    <img src="${p.src}" style="width:100%;border-radius:12px;margin-bottom:12px">
+    <div class="field"><label>Légende</label><input class="input" id="ph_leg" value="${esc(p.legende)}"
+      placeholder="ex. Unité extérieure en façade sud"></div>
+    <div class="field"><label>Note technique</label><textarea class="input" id="ph_not"
+      placeholder="ex. Prévoir support mural + liaison 8 m, passage en gaine PVC. Accès par échelle.">${esc(p.note)}</textarea></div>
+    <div class="field"><label>Catégorie</label><select class="input" id="ph_cat">
+      <option value="">—</option>${CATS_PHOTO.map(c=>`<option ${p.cat===c?"selected":""}>${c}</option>`).join("")}</select></div>
+    <div class="grid2">
+      <div class="field"><label>Emplacement</label><input class="input" id="ph_emp" value="${esc(p.emplacement)}" placeholder="ex. Salon RDC"></div>
+      <div class="field"><label>Priorité</label><select class="input" id="ph_pri">
+        ${Object.entries(PRIOS).map(([k,v])=>`<option value="${k}" ${String(p.prio)===k?"selected":""}>${v}</option>`).join("")}</select></div>
+    </div>
+    <div class="field"><label>Observations</label><input class="input" id="ph_obs" value="${esc(p.obs)}"></div>
+    <div class="grid2">
+      <button class="btn ghost" onclick="closeSheet();annoter(${i})">✍ Annoter la photo</button>
+      <button class="btn" onclick="savePhoto(${i})">Enregistrer</button></div>`);
+}
+function savePhoto(i){
+  const p=S.current.photos[i];
+  p.legende=$("#ph_leg").value; p.note=$("#ph_not").value; p.cat=$("#ph_cat").value;
+  p.emplacement=$("#ph_emp").value; p.prio=+$("#ph_pri").value; p.obs=$("#ph_obs").value;
+  touchSave(); closeSheet(); tPhotos(); toast("Photo mise à jour");
+}
+function voirPhoto(i){
+  const p=S.current.photos[i];
+  lockScroll();
+  $("#modals").innerHTML=`<div class="viewer"><div class="bar">Photo ${i+1} / ${S.current.photos.length}
+    <button class="iconbtn" onclick="closeSheet()">✕</button></div>
+    <div class="stage"><img src="${p.src}"></div>
+    <div class="tools"><button onclick="closeSheet();editPhoto(${i})">✎ Légende et notes</button>
+      <button onclick="closeSheet();annoter(${i})">✍ Annoter</button></div></div>`;
+}
+
+/* ===================== MOTEUR D'ANNOTATION / CROQUIS ===================== */
+const D={cv:null,cx:null,base:null,shapes:[],redo:[],tool:"fleche",color:"#FA1419",size:5,cur:null,onSave:null,grid:false};
+function openCanvas(opt){
+  D.shapes=JSON.parse(JSON.stringify(opt.shapes||[])); D.redo=[]; D.tool=opt.grid?"libre":"fleche";
+  D.color="#FA1419"; D.onSave=opt.onSave; D.grid=!!opt.grid; D.base=null;
+  const tools=[["fleche","➚ Flèche"],["cercle","○ Cercle"],["ligne","／ Ligne"],["rect","▭ Rectangle"],
+    ["texte","T Texte"],["libre","✎ Libre"]].concat(opt.grid?[["mesure","↔ Mesure"]]:[]);
+  lockScroll();
+  $("#modals").innerHTML=`<div class="viewer">
+    <div class="bar">${esc(opt.title)}<button class="iconbtn" onclick="closeSheet()">✕</button></div>
+    <div class="stage"><canvas id="dcv"></canvas></div>
+    <div class="tools">
+      ${tools.map(([k,l])=>`<button data-t="${k}" class="${D.tool===k?"on":""}" onclick="setTool('${k}')">${l}</button>`).join("")}
+      <span class="sep"></span>
+      ${["#FA1419","#0271FD","#FACC15","#00174D","#FFFFFF"].map(c=>`<button data-c="${c}" onclick="setColor('${c}')"
+        style="background:${c};width:38px;border:2px solid ${c===D.color?"#fff":"transparent"}">&nbsp;</button>`).join("")}
+      <span class="sep"></span>
+      <button onclick="undo()">↺ Annuler</button><button onclick="redo()">↻ Refaire</button>
+      <button onclick="clearAll()">✕ Effacer</button>
+      <span class="sep"></span>
+      <button style="background:#0E9F6E" onclick="saveCanvas()">✓ Valider</button>
+    </div></div>`;
+  D.cv=$("#dcv"); D.cx=D.cv.getContext("2d");
+  const start=()=>{ fitCanvas(); paint(); attachDraw(); };
+  if(opt.baseSrc){ const img=new Image(); img.onload=()=>{ D.base=img; D.cv.width=img.width; D.cv.height=img.height; start(); }; img.src=opt.baseSrc; }
+  else { D.cv.width=1200; D.cv.height=850; start(); }
+}
+function fitCanvas(){
+  const stage=$(".stage"), r=stage.getBoundingClientRect();
+  const s=Math.min(r.width/D.cv.width, r.height/D.cv.height);
+  D.cv.style.width=(D.cv.width*s)+"px"; D.cv.style.height=(D.cv.height*s)+"px";
+}
+function setTool(t){ D.tool=t; $$(".tools button[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===t)); }
+function setColor(c){ D.color=c; $$(".tools button[data-c]").forEach(b=>b.style.border="2px solid "+(b.dataset.c===c?"#fff":"transparent")); }
+function undo(){ if(D.shapes.length){ D.redo.push(D.shapes.pop()); paint(); } }
+function redo(){ if(D.redo.length){ D.shapes.push(D.redo.pop()); paint(); } }
+function clearAll(){ if(D.shapes.length&&confirm("Effacer toutes les annotations ?")){ D.shapes=[]; D.redo=[]; paint(); } }
+function pos(e){
+  const r=D.cv.getBoundingClientRect();
+  return {x:(e.clientX-r.left)*D.cv.width/r.width, y:(e.clientY-r.top)*D.cv.height/r.height};
+}
+function attachDraw(){
+  const cv=D.cv;
+  const stop=e=>e.preventDefault();
+  cv.addEventListener("touchstart",stop,{passive:false});
+  cv.addEventListener("touchmove",stop,{passive:false});
+  $(".stage").addEventListener("touchmove",stop,{passive:false});
+  cv.addEventListener("pointerdown",e=>{
+    e.preventDefault(); cv.setPointerCapture(e.pointerId); const p=pos(e);
+    if(D.tool==="texte"){
+      const t=prompt("Texte à ajouter :"); if(t) { D.shapes.push({t:"texte",x:p.x,y:p.y,txt:t,c:D.color}); paint(); }
+      return;
+    }
+    D.cur={t:D.tool,x:p.x,y:p.y,x2:p.x,y2:p.y,c:D.color,pts:[[p.x,p.y]]};
+  });
+  cv.addEventListener("pointermove",e=>{
+    if(!D.cur) return; e.preventDefault(); const p=pos(e); D.cur.x2=p.x; D.cur.y2=p.y;
+    if(D.cur.t==="libre") D.cur.pts.push([p.x,p.y]);
+    paint(D.cur);
+  });
+  const end=()=>{ if(D.cur){ D.shapes.push(D.cur); D.cur=null; D.redo=[]; paint(); } };
+  cv.addEventListener("pointerup",end); cv.addEventListener("pointercancel",end);
+  window.addEventListener("resize",fitCanvas);
+}
+function paint(extra){
+  const cx=D.cx,cv=D.cv;
+  cx.clearRect(0,0,cv.width,cv.height);
+  if(D.base) cx.drawImage(D.base,0,0,cv.width,cv.height);
+  else{
+    cx.fillStyle="#fff"; cx.fillRect(0,0,cv.width,cv.height);
+    cx.strokeStyle="#E2E8F0"; cx.lineWidth=1;
+    for(let x=0;x<cv.width;x+=40){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,cv.height);cx.stroke();}
+    for(let y=0;y<cv.height;y+=40){cx.beginPath();cx.moveTo(0,y);cx.lineTo(cv.width,y);cx.stroke();}
+  }
+  const lw=Math.max(3,Math.round(cv.width/300));
+  [...D.shapes, ...(extra?[extra]:[])].forEach(s=>{
+    cx.strokeStyle=s.c; cx.fillStyle=s.c; cx.lineWidth=lw; cx.lineCap="round"; cx.lineJoin="round";
+    const dx=s.x2-s.x, dy=s.y2-s.y;
+    if(s.t==="ligne"||s.t==="fleche"||s.t==="mesure"){
+      cx.beginPath(); cx.moveTo(s.x,s.y); cx.lineTo(s.x2,s.y2); cx.stroke();
+      if(s.t==="fleche"){
+        const a=Math.atan2(dy,dx), h=lw*5;
+        cx.beginPath(); cx.moveTo(s.x2,s.y2);
+        cx.lineTo(s.x2-h*Math.cos(a-.4),s.y2-h*Math.sin(a-.4));
+        cx.lineTo(s.x2-h*Math.cos(a+.4),s.y2-h*Math.sin(a+.4));
+        cx.closePath(); cx.fill();
+      }
+      if(s.t==="mesure"){
+        const len=Math.round(Math.hypot(dx,dy)/40*10)/10;
+        cx.font="bold "+(lw*6)+"px sans-serif"; cx.textAlign="center";
+        const txt=(s.txt!=null?s.txt:len+" m");
+        const mx=(s.x+s.x2)/2, my=(s.y+s.y2)/2-lw*3;
+        cx.fillStyle="#fff"; const w=cx.measureText(txt).width+12;
+        cx.fillRect(mx-w/2,my-lw*6,w,lw*8); cx.fillStyle=s.c; cx.fillText(txt,mx,my);
+      }
+    } else if(s.t==="rect"){ cx.strokeRect(s.x,s.y,dx,dy); }
+    else if(s.t==="cercle"){ cx.beginPath(); cx.ellipse(s.x+dx/2,s.y+dy/2,Math.abs(dx/2),Math.abs(dy/2),0,0,7); cx.stroke(); }
+    else if(s.t==="libre"){ cx.beginPath(); (s.pts||[]).forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1])); cx.stroke(); }
+    else if(s.t==="texte"){
+      cx.font="bold "+(lw*7)+"px sans-serif"; cx.textAlign="left";
+      const w=cx.measureText(s.txt).width+14;
+      cx.fillStyle="rgba(255,255,255,.88)"; cx.fillRect(s.x-7,s.y-lw*7,w,lw*9);
+      cx.fillStyle=s.c; cx.fillText(s.txt,s.x,s.y);
+    }
+  });
+}
+function saveCanvas(){
+  const data=D.cv.toDataURL("image/jpeg",0.82);
+  D.onSave(data,D.shapes); closeSheet();
+}
+function annoter(i){
+  const p=S.current.photos[i];
+  openCanvas({title:"Annoter la photo "+(i+1), baseSrc:p.orig||p.src, shapes:p.shapes,
+    onSave:(data,shapes)=>{ p.src=data; p.shapes=shapes; touchSave(); vEditeur(); toast("Annotations enregistrées"); }});
+}
+
+/* ---------- onglet CROQUIS ---------- */
+function tCroquis(){
+  const r=S.current;
+  $("#tabBody").innerHTML=`<div class="card"><h2>Croquis du chantier</h2><div class="tri-sm"></div>
+    <p style="color:var(--muted);font-size:.86rem">Implantation des unités, passage des liaisons, cotes.
+    L'outil Mesure indique une longueur indicative (1 carreau = 0,25 m par défaut).</p>
+    ${r.croquis?`<img src="${r.croquis}" style="width:100%;border:1px solid var(--line);border-radius:12px;margin-bottom:12px">`
+      :`<div class="empty"><span class="big">✎</span>Aucun croquis.</div>`}
+    <div class="grid2">
+      <button class="btn" onclick="editCroquis()">${r.croquis?"Modifier le croquis":"Dessiner un croquis"}</button>
+      ${r.croquis?`<button class="btn ghost" onclick="S.current.croquis=null;S.current.croquisShapes=[];touchSave();tCroquis()">Supprimer</button>`:""}
+    </div></div>`;
+}
+function editCroquis(){
+  openCanvas({title:"Croquis du chantier", grid:true, shapes:S.current.croquisShapes,
+    onSave:(data,shapes)=>{ S.current.croquis=data; S.current.croquisShapes=shapes; touchSave(); tCroquis(); toast("Croquis enregistré"); }});
+}
+
+/* ---------- onglet TRAVAUX ---------- */
+function tTravaux(){
+  const r=S.current;
+  $("#tabBody").innerHTML=`
+    <button class="btn block" style="margin-bottom:12px" onclick="addTravail()">＋ Ajouter une ligne de travaux</button>
+    ${(r.travaux||[]).length? r.travaux.map((t,i)=>`
+      <div class="work">
+        <div class="field"><label>Désignation</label>
+          <input class="input" value="${esc(t.designation)}" oninput="setTr(${i},'designation',this.value)" placeholder="ex. Pose split mural"></div>
+        <div class="field"><label>Description</label>
+          <textarea class="input" style="min-height:70px" oninput="setTr(${i},'description',this.value)"
+            placeholder="ex. Dépose ancien split, pose unité 3,5 kW, mise en service">${esc(t.description)}</textarea></div>
+        <div class="qty">
+          <div class="field"><label>Quantité</label>
+            <input class="input" inputmode="decimal" value="${esc(t.qte)}" oninput="setTr(${i},'qte',this.value)"></div>
+          <div class="field"><label>Unité</label><select class="input" onchange="setTr(${i},'unite',this.value)">
+            ${UNITES.map(u=>`<option ${t.unite===u?"selected":""}>${u}</option>`).join("")}</select></div>
+        </div>
+        <div class="field"><label>Observation</label>
+          <input class="input" value="${esc(t.obs)}" oninput="setTr(${i},'obs',this.value)"
+            placeholder="ex. hauteur 3 m, nacelle nécessaire"></div>
+        <div class="field"><label>Photo associée</label><select class="input" onchange="setTr(${i},'photoId',this.value)">
+          <option value="">Aucune</option>
+          ${(r.photos||[]).map((p,j)=>`<option value="${p.id}" ${t.photoId===p.id?"selected":""}>Photo ${j+1}${p.legende?" — "+esc(p.legende):""}</option>`).join("")}
+        </select></div>
+        <div class="grid2">
+          <button class="btn sm ghost" onclick="moveTr(${i},-1)">↑ Monter</button>
+          <button class="btn sm ghost" style="color:var(--red)" onclick="delTr(${i})">Supprimer</button></div>
+      </div>`).join("")
+      : `<div class="empty"><span class="big">▤</span>Aucun travail listé.<br>Détaillez les prestations relevées sur site.</div>`}`;
+}
+function addTravail(){
+  S.current.travaux.push({id:uid(),designation:"",description:"",qte:"1",unite:"unité",obs:"",photoId:""});
+  touchSave(); vEditeur();
+}
+function setTr(i,k,v){ S.current.travaux[i][k]=v; touchSave(); }
+function moveTr(i,d){ const t=S.current.travaux,j=i+d; if(j<0||j>=t.length) return; [t[i],t[j]]=[t[j],t[i]]; touchSave(); tTravaux(); }
+function delTr(i){ S.current.travaux.splice(i,1); touchSave(); vEditeur(); }
+
+/* ---------- onglet NOTES + dictée ---------- */
+let reco=null;
+function tNotes(){
+  const r=S.current;
+  const dispo = "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
+  $("#tabBody").innerHTML=`<div class="card"><h2>Notes techniques du chantier</h2><div class="tri-sm"></div>
+    <p style="color:var(--muted);font-size:.85rem">Travaux à réaliser, accès, matériel, contraintes, sécurité, évacuation.</p>
+    <textarea class="input" id="n_txt" style="min-height:240px"
+      placeholder="ex. Local technique au sous-sol, accès par escalier étroit. Prévoir carotteuse Ø 70 pour traversée de mur.
+Alimentation électrique à reprendre depuis le tableau divisionnaire.
+Évacuation des condensats vers descente EP existante.">${esc(r.notes)}</textarea>
+    <div class="grid2" style="margin-top:10px">
+      ${dispo?`<button class="btn" id="micBtn" onclick="toggleDictee()">🎙 Dicter</button>`
+        :`<button class="btn ghost" disabled>Dictée indisponible sur ce navigateur</button>`}
+      <button class="btn ghost" onclick="insereModele()">Insérer un modèle</button>
+    </div></div>`;
+  bind("n_txt","notes");
+}
+function insereModele(){
+  const t=$("#n_txt");
+  const modele=`ACCÈS CHANTIER : 
+MATÉRIEL NÉCESSAIRE : 
+CONTRAINTES / SÉCURITÉ : 
+ÉVACUATION DES DÉCHETS : 
+TRAVAUX À RÉALISER : `;
+  t.value=(t.value?t.value+"\n\n":"")+modele; S.current.notes=t.value; touchSave(); t.focus();
+}
+function toggleDictee(){
+  const btn=$("#micBtn"), t=$("#n_txt");
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(reco){ reco.stop(); reco=null; btn.textContent="🎙 Dicter"; btn.classList.remove("danger"); return; }
+  reco=new SR(); reco.lang="fr-FR"; reco.continuous=true; reco.interimResults=false;
+  reco.onresult=e=>{
+    let add=""; for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) add+=e.results[i][0].transcript+" ";
+    if(add){ t.value=(t.value?t.value.trimEnd()+" ":"")+add.trim(); S.current.notes=t.value; touchSave(); }
+  };
+  reco.onerror=()=>{ toast("Dictée interrompue"); reco=null; btn.textContent="🎙 Dicter"; btn.classList.remove("danger"); };
+  reco.onend=()=>{ if(reco){ try{reco.start();}catch(e){} } };
+  reco.start(); btn.textContent="⏹ Arrêter la dictée"; btn.classList.add("danger"); toast("Parlez, le texte s'ajoute aux notes");
+}
+
+/* ===================== RAPPORT ===================== */
+function nomFichier(r){
+  const cl=(r.societe||r.clientNom||"CLIENT").toUpperCase().replace(/[^A-Z0-9]+/g,"_").slice(0,24);
+  return "RELEVE_"+cl+"_"+(r.date||today()).replace(/-/g,"")+"_"+(r.ref||"").replace(/[^A-Z0-9-]/gi,"")+".pdf";
+}
+function htmlRapport(r){
+  const e=S.entreprise;
+  const kv=(l,v)=>`<div><span>${l}</span>${esc(v||"—")}</div>`;
+  return `<div id="report">
+    <div class="rh">
+      <img src="${e.logo||LOGO}" alt="${esc(e.nom)}">
+      <div class="ref"><b>${esc(r.ref)}</b>Relevé de chantier<br>${fdate(r.date)} ${r.heure?"· "+esc(r.heure):""}</div>
+    </div>
+    <div class="tri"></div>
+    <h4>Client</h4>
+    <div class="kv">${kv("Société",r.societe)}${kv("Contact",r.clientNom)}${kv("Téléphone",r.tel)}${kv("Email",r.email)}
+      ${(r.adressePost||r.villePost)?kv("Adresse postale",[r.adressePost,r.cpPost,r.villePost].filter(Boolean).join(" ")):""}</div>
+    <h4>Chantier</h4>
+    <div class="kv">${kv("Adresse",r.adresse)}${kv("Commune",[r.cp,r.ville].filter(Boolean).join(" "))}
+      ${kv("Objet",objetLabel(r))}${kv("Relevé par",r.auteur)}</div>
+    ${r.notes?`<h4>Notes techniques</h4><div style="font-size:.85rem;white-space:pre-wrap">${esc(r.notes)}</div>`:""}
+    ${(r.travaux||[]).length?`<h4>Travaux relevés</h4><table><tr><th>Désignation</th><th>Qté</th><th>Unité</th><th>Observation</th></tr>
+      ${r.travaux.map(t=>`<tr><td><b>${esc(t.designation)}</b>${t.description?`<br><span style="color:var(--muted)">${esc(t.description)}</span>`:""}</td>
+      <td>${esc(t.qte)}</td><td>${esc(t.unite)}</td><td>${esc(t.obs)}</td></tr>`).join("")}</table>`:""}
+    ${(r.photos||[]).length?`<h4>Photos du chantier</h4><div class="rphotos">
+      ${r.photos.map((p,i)=>`<figure><img src="${p.src}"><figcaption><b>${i+1}. ${esc(p.legende||"Sans légende")}</b>
+        ${p.note?`<em>${esc(p.note)}</em>`:""}${p.cat?`<em>${esc(p.cat)}${p.emplacement?" · "+esc(p.emplacement):""}</em>`:""}</figcaption></figure>`).join("")}
+      </div>`:""}
+    ${r.croquis?`<h4>Croquis</h4><img src="${r.croquis}" style="width:100%;border:1px solid var(--line);border-radius:8px">`:""}
+    <div class="tri" style="margin-top:18px"></div>
+    <p style="font-size:.72rem;color:var(--muted);margin-top:8px">${esc(e.nom)}${e.adresse?" · "+esc([e.adresse,e.cp,e.ville].filter(Boolean).join(" ")):""}
+      ${e.tel?" · "+esc(e.tel):""}${e.email?" · "+esc(e.email):""}<br>${esc(e.mentions||"")}</p>
+  </div>`;
+}
+function tRapport(){
+  const r=S.current;
+  $("#tabBody").innerHTML=`
+    <div class="card noprint"><h2>Rapport de relevé</h2><div class="tri-sm"></div>
+      <div class="grid2">
+        <button class="btn" onclick="genPDF()">⬇ Télécharger en PDF</button>
+        <button class="btn ghost" onclick="window.print()">🖨 Imprimer</button>
+        <button class="btn ghost" onclick="mailSheet()">✉ Envoyer par email</button>
+        <button class="btn ghost" onclick="partager()">↗ Partager</button>
+      </div>
+      ${r.statut!=="termine"&&r.statut!=="valide"?`<button class="btn block navy" style="margin-top:10px"
+        onclick="S.current.statut='termine';touchSave();vEditeur();toast('Relevé marqué terminé')">Marquer le relevé terminé</button>`:""}
+      <p style="font-size:.75rem;color:var(--muted);margin:10px 0 0">Fichier : ${esc(nomFichier(r))}</p>
+    </div>
+    ${htmlRapport(r)}`;
+}
+function vRapport(id){ ouvrirReleve(id); }
+
+/* ---------- génération PDF ---------- */
+function loadJsPDF(){
+  return new Promise((res,rej)=>{
+    if(window.jspdf) return res(window.jspdf.jsPDF);
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    s.onload=()=>res(window.jspdf.jsPDF); s.onerror=rej; document.head.appendChild(s);
+  });
+}
+async function buildPDF(r){
+  const jsPDF=await loadJsPDF(); const e=S.entreprise;
+  const doc=new jsPDF({unit:"mm",format:"a4"});
+  const W=210,H=297,M=14; let y=M;
+  const navy=[0,23,77], blue=[2,113,253], red=[250,20,25], grey=[100,116,139];
+  const srcs=[e.logo||LOGO].concat((r.photos||[]).map(p=>p.src)).concat(r.croquis?[r.croquis]:[]);
+  const dims={};
+  await Promise.all(srcs.map(src=>new Promise(ok=>{
+    const i=new Image();
+    i.onload=()=>{ dims[src]={w:i.naturalWidth||4,h:i.naturalHeight||3}; ok(); };
+    i.onerror=()=>{ dims[src]={w:4,h:3}; ok(); };
+    i.src=src;
+  })));
+  const imgSize=src=>dims[src]||{w:4,h:3};
+  function trico(yy){ doc.setFillColor(...navy); doc.rect(M,yy,(W-2*M)*.46,1.2,"F");
+    doc.setFillColor(...red); doc.rect(M+(W-2*M)*.6,yy,(W-2*M)*.4,1.2,"F"); }
+  function br(need){ if(y+need>H-20){ doc.addPage(); y=M; } }
+  function h4(t){ br(14); y+=4; doc.setFontSize(8.5); doc.setTextColor(...blue); doc.setFont("helvetica","bold");
+    doc.text(t.toUpperCase(),M,y); y+=1.5; doc.setDrawColor(225,232,240); doc.line(M,y,W-M,y); y+=5; }
+  // en-tête
+  try{ const d=imgSize(e.logo||LOGO); const lw=42, lh=lw*d.h/d.w; doc.addImage(e.logo||LOGO,"PNG",M,y,lw,lh); }catch(err){}
+  doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.setTextColor(...navy);
+  doc.text(r.ref||"",W-M,y+6,{align:"right"});
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...grey);
+  doc.text("Relevé de chantier",W-M,y+11,{align:"right"});
+  doc.text(fdate(r.date)+(r.heure?" · "+r.heure:""),W-M,y+15.5,{align:"right"});
+  y+=20; trico(y); y+=6;
+  // blocs infos
+  function bloc(titre,pairs0){
+    const pairs=pairs0.filter(p=>p[0]);
+    h4(titre);
+    doc.setFontSize(9);
+    pairs.forEach((p,i)=>{
+      const col = i%2, x = M + col*(W-2*M)/2;
+      if(col===0) br(11);
+      doc.setTextColor(...grey); doc.setFont("helvetica","normal"); doc.setFontSize(7.5);
+      doc.text(p[0],x,y);
+      doc.setTextColor(30,41,59); doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
+      const vls=doc.splitTextToSize(String(p[1]||"—"),(W-2*M)/2-6).slice(0,2);
+      vls.forEach((l,k)=>doc.text(l,x,y+4.5+k*4.3));
+      if(col===1||i===pairs.length-1) y+=11;
+    });
+  }
+  bloc("Client",[["Société",r.societe],["Contact",r.clientNom],["Téléphone",r.tel],["Email",r.email]]
+    .concat((r.adressePost||r.villePost)?[["Adresse postale",[r.adressePost,r.cpPost,r.villePost].filter(Boolean).join(" ")]]:[]));
+  bloc("Chantier",[["Adresse",r.adresse],["Commune",[r.cp,r.ville].filter(Boolean).join(" ")],
+    ["Objet du chantier",objetLabel(r)],["Relevé effectué par",r.auteur]]);
+  if(r.notes){
+    h4("Notes techniques");
+    doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(30,41,59);
+    doc.splitTextToSize(r.notes,W-2*M).forEach(l=>{ br(6); doc.text(l,M,y); y+=4.8; });
+    y+=2;
+  }
+  if((r.travaux||[]).length){
+    h4("Travaux relevés");
+    const cols=[M,M+96,M+116,M+136], wid=[94,18,18,W-M-(M+136)];
+    doc.setFillColor(242,246,252); doc.rect(M,y-4,W-2*M,7,"F");
+    doc.setFontSize(7.5); doc.setTextColor(...navy); doc.setFont("helvetica","bold");
+    ["DÉSIGNATION","QTÉ","UNITÉ","OBSERVATION"].forEach((t,i)=>doc.text(t,cols[i]+1,y));
+    y+=6;
+    r.travaux.forEach(t=>{
+      const l1=doc.splitTextToSize(t.designation||"—",wid[0]-2);
+      const l2=t.description?doc.splitTextToSize(t.description,wid[0]-2):[];
+      const l4=doc.splitTextToSize(t.obs||"",wid[3]-2);
+      const hh=Math.max(l1.length+l2.length,l4.length,1)*4.4+3;
+      br(hh+4);
+      doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(0,23,77);
+      let yy=y; l1.forEach(l=>{doc.text(l,cols[0]+1,yy);yy+=4.4;});
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...grey);
+      l2.forEach(l=>{doc.text(l,cols[0]+1,yy);yy+=4.2;});
+      doc.setFontSize(9); doc.setTextColor(30,41,59);
+      doc.text(String(t.qte||""),cols[1]+1,y); doc.text(String(t.unite||""),cols[2]+1,y);
+      let y4=y; l4.forEach(l=>{doc.text(l,cols[3]+1,y4);y4+=4.4;});
+      y+=hh; doc.setDrawColor(225,232,240); doc.line(M,y-2,W-M,y-2);
+    });
+    y+=3;
+  }
+  if((r.photos||[]).length){
+    h4("Photos du chantier");
+    const cw=(W-2*M-6)/2;
+    for(let i=0;i<r.photos.length;i+=2){
+      const pair=r.photos.slice(i,i+2);
+      const heights=pair.map(p=>{ const d=imgSize(p.src); return Math.min(cw*d.h/d.w, 60); });
+      const legends=pair.map(p=>{
+        const t=[(p.legende||"Sans légende")]; if(p.note) t.push(p.note);
+        if(p.cat) t.push(p.cat+(p.emplacement?" · "+p.emplacement:""));
+        return doc.splitTextToSize(t.join(" — "),cw);
+      });
+      const blockH=Math.max(...heights)+Math.max(...legends.map(l=>l.length))*3.6+8;
+      br(blockH);
+      pair.forEach((p,j)=>{
+        const x=M+j*(cw+6);
+        try{ doc.addImage(p.src,"JPEG",x,y,cw,heights[j]); }catch(err){}
+        doc.setDrawColor(220,227,238); doc.rect(x,y,cw,heights[j]);
+        doc.setFontSize(7.5); doc.setTextColor(...navy); doc.setFont("helvetica","bold");
+        doc.text(String(i+j+1)+".",x,y+heights[j]+4);
+        doc.setFont("helvetica","normal"); doc.setTextColor(70,85,110);
+        let yy=y+heights[j]+4;
+        legends[j].forEach((l,k)=>{ doc.text(l,x+(k===0?4:0),yy); yy+=3.6; });
+      });
+      y+=blockH;
+    }
+  }
+  if(r.croquis){
+    h4("Croquis");
+    const d=imgSize(r.croquis), cw=W-2*M, ch=Math.min(cw*d.h/d.w,120);
+    br(ch+4); try{ doc.addImage(r.croquis,"JPEG",M,y,cw,ch); }catch(err){}
+    doc.setDrawColor(220,227,238); doc.rect(M,y,cw,ch); y+=ch+4;
+  }
+  // pieds de page
+  const n=doc.getNumberOfPages();
+  for(let i=1;i<=n;i++){
+    doc.setPage(i);
+    doc.setFillColor(...navy); doc.rect(M,H-16,(W-2*M)*.46,1,"F");
+    doc.setFillColor(...red); doc.rect(M+(W-2*M)*.6,H-16,(W-2*M)*.4,1,"F");
+    doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont("helvetica","normal");
+    const pied=[e.nom,[e.adresse,e.cp,e.ville].filter(Boolean).join(" "),e.tel,e.email].filter(Boolean).join(" · ");
+    doc.text(pied.slice(0,110),M,H-11);
+    if(e.mentions) doc.text(doc.splitTextToSize(e.mentions,W-2*M-20)[0]||"",M,H-7.5);
+    doc.text(i+"/"+n,W-M,H-11,{align:"right"});
+  }
+  return doc;
+}
+async function genPDF(){
+  if(!can("exporter")) return toast("Votre profil ne permet pas l'export");
+  toast("Génération du PDF…");
+  try{
+    const doc=await buildPDF(S.current);
+    doc.save(nomFichier(S.current));
+    await log("a exporté le rapport "+S.current.ref);
+  }catch(err){ console.error(err); toast("PDF indisponible hors connexion — utilisez Imprimer"); }
+}
+async function partager(){
+  try{
+    const doc=await buildPDF(S.current);
+    const blob=doc.output("blob");
+    const file=new File([blob],nomFichier(S.current),{type:"application/pdf"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})) await navigator.share({files:[file],title:S.current.ref});
+    else if(navigator.share) await navigator.share({title:S.current.ref,text:"Relevé de chantier "+S.current.ref});
+    else { doc.save(nomFichier(S.current)); toast("Partage non disponible — PDF téléchargé"); }
+  }catch(err){ toast("Partage annulé"); }
+}
+function mailSheet(){
+  const r=S.current, e=S.entreprise;
+  const corps=`Bonjour,
+
+Veuillez trouver le relevé de chantier ${r.ref} réalisé le ${fdate(r.date)} par ${r.auteur}.
+
+Chantier : ${[r.adresse,r.cp,r.ville].filter(Boolean).join(" ")}
+Objet : ${objetLabel(r)||"—"}
+Photos : ${(r.photos||[]).length} · Lignes de travaux : ${(r.travaux||[]).length}
+
+Cordialement,
+${e.nom}${e.tel?" — "+e.tel:""}`;
+  sheet(`<h2>Envoyer le rapport</h2><div class="tri-sm"></div>
+    <div class="field"><label>Destinataire</label><input class="input" id="m_to" type="email" value="${esc(r.email||"")}"></div>
+    <div class="field"><label>Copie</label><input class="input" id="m_cc" type="email" value="${esc(S.user.email)}"></div>
+    <div class="field"><label>Objet</label><input class="input" id="m_sub" value="Relevé de chantier ${esc(r.ref)} — ${esc(r.societe||r.clientNom||"")}"></div>
+    <div class="field"><label>Message</label><textarea class="input" id="m_body" style="min-height:170px">${esc(corps)}</textarea></div>
+    <button class="btn block" onclick="envoyerMail()">Ouvrir la messagerie</button>
+    <button class="btn block ghost" style="margin-top:8px" onclick="genPDF()">Télécharger le PDF à joindre</button>
+    <p style="font-size:.75rem;color:var(--muted);margin-top:10px">Le PDF est téléchargé puis à glisser dans le message :
+    les applications de messagerie n'autorisent pas la pièce jointe automatique depuis un navigateur.
+    Sur mobile, « Partager » envoie directement le PDF.</p>`);
+}
+function envoyerMail(){
+  const to=$("#m_to").value, cc=$("#m_cc").value, sub=$("#m_sub").value, b=$("#m_body").value;
+  location.href=`mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(b)}`;
+  log("a envoyé par email le relevé "+S.current.ref); closeSheet();
+}
+
+/* ===================== HORS CONNEXION / PWA ===================== */
+function netUI(){
+  const bar=$("#netbar");
+  if(!navigator.onLine){ bar.style.display="block"; bar.classList.remove("sync");
+    bar.textContent="Hors connexion — données enregistrées localement"; }
+  else{
+    const enAttente=S.releves.filter(r=>r.sync===false).length;
+    bar.classList.add("sync"); bar.style.display="block";
+    bar.textContent= enAttente? "Synchronisation de "+enAttente+" relevé(s)…" : "Synchronisation terminée";
+    if(enAttente){ S.releves.filter(r=>!r.sync).forEach(async r=>{ r.sync=true; await DB.put("releves",r); }); }
+    if(Cloud.actif()) Cloud.pull().then(()=>refresh());
+    setTimeout(()=>{ if(navigator.onLine) bar.style.display="none"; },2600);
+  }
+  const st=$("#netState"); if(st) st.textContent=navigator.onLine?"en ligne":"hors connexion";
+}
+window.addEventListener("online",netUI); window.addEventListener("offline",netUI);
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+window.addEventListener("beforeunload",()=>{ if(S.current&&saveTimer){ clearTimeout(saveTimer); DB.put("releves",S.current); } });
+boot().then(()=>{ if(!navigator.onLine) netUI(); })
+  .catch(err=>{ console.error(err); $("#login").style.display="flex"; toast("Démarrage en mode restreint"); });
+</script>
+</body>
+</html>
