@@ -119,7 +119,10 @@ body.lock{position:fixed;left:0;right:0;overflow:hidden;width:100%}
 .input,select.input,textarea.input{width:100%;padding:13px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;font-size:16px}
 .input:focus{outline:2px solid var(--blue);border-color:transparent}
 textarea.input{min-height:110px;resize:vertical;line-height:1.5}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+.grid2>.field{min-width:0;margin-bottom:12px;display:flex;flex-direction:column;justify-content:flex-end}
+input[type="date"].input,input[type="time"].input{-webkit-appearance:none;appearance:none;
+  height:50px;line-height:24px;display:block;min-width:0;text-align:left}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{padding:9px 13px;border-radius:99px;border:1px solid var(--line);background:#fff;font-size:.85rem;font-weight:600;cursor:pointer}
 .chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -172,10 +175,13 @@ nav.bottom button.mid{color:var(--blue)}
 .sheet .inner{background:#fff;width:100%;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + var(--safe))}
 @media(min-width:700px){.sheet{align-items:center;justify-content:center}.sheet .inner{max-width:620px;border-radius:16px}}
 .sheet .handle{width:40px;height:4px;background:var(--line);border-radius:99px;margin:0 auto 14px}
-.sheetclose{float:right;margin:-6px 0 6px 10px;background:#F1F5FB;border:0;border-radius:10px;width:40px;height:40px;font-size:1rem;font-weight:700;color:var(--navy);cursor:pointer}
+.sheetclose{float:right;margin:-6px 0 6px 10px;background:#F1F5FB;border:0;border-radius:10px;
+  padding:10px 14px;font-size:.85rem;font-weight:800;color:var(--navy);cursor:pointer}
 .viewer{position:fixed;inset:0;z-index:90;background:#040F28;display:flex;flex-direction:column}
 .viewer .bar{display:flex;gap:8px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;align-items:center;color:#fff;font-weight:700}
 .viewer .bar button{margin-left:auto}
+.viewer .bar .close{background:#fff;color:var(--navy);border:0;border-radius:10px;padding:11px 16px;
+  font-size:.9rem;font-weight:800;cursor:pointer}
 .viewer .stage{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
 .viewer canvas,.viewer img{max-width:100%;max-height:100%;touch-action:none}
 .tools{display:flex;gap:6px;overflow-x:auto;padding:10px 12px calc(12px + var(--safe));background:#071E52;scrollbar-width:none}
@@ -243,7 +249,7 @@ nav.bottom button.mid{color:var(--blue)}
       <img id="topLogo" alt="AXAIR">
       <div class="who"><b id="whoName">—</b><span id="whoRole">—</span></div>
     </div>
-    <div class="tri dark" style="margin-bottom:8px"></div>
+    <div class="tri dark" style="width:100%;border-radius:0"></div>
   </header>
   <div id="netbar">Hors connexion — données enregistrées localement</div>
   <div id="tabsHost"></div>
@@ -781,7 +787,7 @@ function sheet(html){
   lockScroll();
   $("#modals").innerHTML=`<div class="sheet" onclick="if(event.target===this)closeSheet()">
     <div class="inner"><div class="handle"></div>
-      <button class="sheetclose" onclick="closeSheet()">✕</button>${html}</div></div>`;
+      <button class="sheetclose" onclick="closeSheet()">Fermer</button>${html}</div></div>`;
 }
 function closeSheet(){ $("#modals").innerHTML=""; unlockScroll(); }
 
@@ -1089,7 +1095,7 @@ function tInfos(){
       <div class="field"><label>Code postal</label><input class="input" inputmode="numeric" id="i_pcp" value="${esc(r.cpPost||"")}"></div>
       <div class="field"><label>Ville</label><input class="input" id="i_pvil" value="${esc(r.villePost||"")}"></div>
     </div>
-    <button class="btn sm ghost block" style="margin-bottom:10px" onclick="copierAdresseChantier()">Identique à l'adresse du chantier</button>
+    <button class="btn sm ghost block" style="margin-bottom:10px" onclick="copierAdresseChantier()">Adresse identique pour le chantier</button>
     ${can("clients")?`<button class="btn sm ghost block" onclick="creerClientDepuisReleve()">Enregistrer comme fiche client</button>`:""}
   </div>
   <div class="card"><h2>Chantier</h2><div class="tri-sm"></div>
@@ -1108,6 +1114,7 @@ function tInfos(){
     <div class="field"><label>Statut</label><select class="input" id="i_st">
       ${Object.entries(STATUTS).map(([k,v])=>`<option value="${k}" ${r.statut===k?"selected":""}>${v.l}</option>`).join("")}</select></div>
   </div>
+  <button class="btn block navy" style="margin-bottom:10px" onclick="enregistrerReleve()">Enregistrer le relevé</button>
   ${can("supprimer")?`<button class="btn block" style="background:#fff;color:var(--red);border:1px solid #FBD5D5;margin-bottom:14px"
     onclick="supprimerReleve()">Supprimer ce relevé</button>`:""}`;
   [["i_nom","clientNom"],["i_soc","societe"],["i_tel","tel"],["i_mail","email"],["i_adr","adresse"],
@@ -1115,15 +1122,23 @@ function tInfos(){
    ["i_padr","adressePost"],["i_pcp","cpPost"],["i_pvil","villePost"],["i_objautre","objetAutre"]].forEach(([a,b])=>bind(a,b));
   $("#i_st").addEventListener("change",e=>{ S.current.statut=e.target.value; touchSave(); vEditeur(); });
 }
+async function enregistrerReleve(){
+  const r=S.current; if(!r) return;
+  clearTimeout(saveTimer); saveTimer=null;
+  r.maj=Date.now(); r.sync=navigator.onLine;
+  await DB.put("releves",r); await refresh();
+  const f=$("#saveflag"); if(f) f.textContent = navigator.onLine? "Enregistré ✓" : "Enregistré localement ✓";
+  toast("Relevé "+r.ref+" enregistré");
+}
 function setObjet(o){ S.current.objet=o; touchSave(); tInfos(); if(o==="Autre") setTimeout(()=>$("#i_objautre")&&$("#i_objautre").focus(),60); }
 function objetLabel(r){ return (r.objet==="Autre" && (r.objetAutre||"").trim()) ? r.objetAutre.trim() : (r.objet||""); }
 function copierAdresseChantier(){
   const r=S.current;
-  if(!r.adresse && !r.cp && !r.ville) return toast("Renseignez d'abord l'adresse du chantier, onglet Chantier");
-  if(r.adresse) r.adressePost=r.adresse;
-  if(r.cp) r.cpPost=r.cp;
-  if(r.ville) r.villePost=r.ville;
-  touchSave(); tInfos(); toast("Adresse postale reprise du chantier");
+  if(!r.adressePost && !r.cpPost && !r.villePost) return toast("Renseignez d'abord l'adresse postale ci-dessus");
+  if(r.adressePost) r.adresse=r.adressePost;
+  if(r.cpPost) r.cp=r.cpPost;
+  if(r.villePost) r.ville=r.villePost;
+  touchSave(); tInfos(); toast("Adresse reportée sur le chantier");
 }
 function lierClient(id){
   const r=S.current, c=S.clients.find(x=>x.id===id);
@@ -1238,7 +1253,7 @@ function voirPhoto(i){
   const p=S.current.photos[i];
   lockScroll();
   $("#modals").innerHTML=`<div class="viewer"><div class="bar">Photo ${i+1} / ${S.current.photos.length}
-    <button class="iconbtn" onclick="closeSheet()">✕</button></div>
+    <button class="close" onclick="closeSheet()">Fermer</button></div>
     <div class="stage"><img src="${p.src}"></div>
     <div class="tools"><button onclick="closeSheet();editPhoto(${i})">✎ Légende et notes</button>
       <button onclick="closeSheet();annoter(${i})">✍ Annoter</button></div></div>`;
@@ -1253,7 +1268,7 @@ function openCanvas(opt){
     ["texte","T Texte"],["libre","✎ Libre"]].concat(opt.grid?[["mesure","↔ Mesure"]]:[]);
   lockScroll();
   $("#modals").innerHTML=`<div class="viewer">
-    <div class="bar">${esc(opt.title)}<button class="iconbtn" onclick="closeSheet()">✕</button></div>
+    <div class="bar">${esc(opt.title)}<button class="close" onclick="closeSheet()">Fermer</button></div>
     <div class="stage"><canvas id="dcv"></canvas></div>
     <div class="tools">
       ${tools.map(([k,l])=>`<button data-t="${k}" class="${D.tool===k?"on":""}" onclick="setTool('${k}')">${l}</button>`).join("")}
@@ -1453,7 +1468,8 @@ function toggleDictee(){
   const btn=$("#micBtn"), t=$("#n_txt");
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(reco) return stopDictee();
-  if(!SR) return toast("Utilisez le micro du clavier de votre téléphone");
+  if(!SR || window.navigator.standalone){ 
+    t.focus(); return toast("Appuyez sur la touche micro 🎙 du clavier pour dicter",4200); }
   try{ reco=new SR(); }catch(e){ return toast("Dictée indisponible ici — micro du clavier"); }
   reco.lang="fr-FR"; reco.continuous=false; reco.interimResults=false; reco.maxAlternatives=1;
   reco.onresult=e=>{
@@ -1463,10 +1479,10 @@ function toggleDictee(){
     if(add){ t.value=(t.value?t.value.trimEnd()+" ":"")+add; S.current.notes=t.value; touchSave(); }
   };
   reco.onerror=e=>{
-    const msg={"not-allowed":"micro refusé — Réglages > Safari > Microphone",
-      "service-not-allowed":"micro bloqué dans l'app installée, utilisez le micro du clavier",
-      "no-speech":"rien entendu","audio-capture":"aucun micro détecté","network":"réseau indisponible"}[e.error]||e.error;
-    toast("Dictée : "+msg); stopDictee();
+    stopDictee();
+    if(e.error==="no-speech") return toast("Rien entendu, réessayez");
+    t.focus();
+    toast("Dictée indisponible ici — utilisez la touche micro 🎙 du clavier",4200);
   };
   reco.onend=()=>{ if(reco&&!reco._stop){ try{ reco.start(); }catch(e){ stopDictee(); } } };
   try{ reco.start(); }catch(e){ return toast("Relancez la dictée"); }
