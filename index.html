@@ -33,8 +33,10 @@ a{color:var(--blue);text-decoration:none}
 .hidden{display:none!important}
 
 /* signature tricolore issue du logo */
-.tri{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--navy) 0 46%,#fff 46% 60%,var(--red) 60% 100%);}
-.tri-sm{height:3px;width:52px;border-radius:2px;background:linear-gradient(90deg,var(--navy) 0 46%,#E3E9F3 46% 60%,var(--red) 60% 100%);margin:6px 0 14px}
+.tri{height:4px;border-radius:2px;
+  background:linear-gradient(90deg,var(--navy) 0 33.33%,#FFFFFF 33.33% 66.66%,var(--red) 66.66% 100%);}
+.tri-sm{height:3px;width:54px;border-radius:2px;margin:6px 0 14px;
+  background:linear-gradient(90deg,var(--navy) 0 33.33%,#E3E9F3 33.33% 66.66%,var(--red) 66.66% 100%);}
 
 /* ---------- LOGIN ---------- */
 #login{min-height:100%;display:none;flex-direction:column;justify-content:center;padding:28px 22px;
@@ -121,6 +123,10 @@ textarea.input{min-height:110px;resize:vertical;line-height:1.5}
 .chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 .switch{display:flex;align-items:center;gap:10px;padding:9px 0;font-size:.9rem}
 .switch input{width:20px;height:20px;accent-color:var(--blue)}
+.pwwrap{position:relative}
+.pwwrap .input{padding-right:52px}
+.pweye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;
+  font-size:1.15rem;padding:8px 10px;cursor:pointer;opacity:.65;line-height:1}
 
 /* ---------- ONGLETS RELEVÉ ---------- */
 .tabs{position:sticky;top:calc(46px + env(safe-area-inset-top,0px));z-index:30;background:var(--bg);
@@ -220,7 +226,10 @@ nav.bottom button.mid{color:var(--blue)}
     <div class="field"><label for="li_mail">Pseudo</label>
       <input class="input" id="li_mail" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Pseudo"></div>
     <div class="field"><label for="li_pass">Mot de passe</label>
-      <input class="input" id="li_pass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+      <div class="pwwrap">
+        <input class="input" id="li_pass" type="password" autocomplete="current-password" placeholder="••••••••">
+        <button type="button" class="pweye" onclick="voirPw('li_pass',this)">👁</button>
+      </div></div>
     <button class="btn block" id="li_go">Se connecter</button>
 
   </div>
@@ -309,6 +318,13 @@ const fdt = ts => { if(!ts) return "jamais"; const d=new Date(ts);
 const LS={ get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},
   set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},
   del:k=>{try{localStorage.removeItem(k)}catch(e){}} };
+function voirPw(id,btn){
+  const i=document.getElementById(id); if(!i) return;
+  const vu = i.type==="password";
+  i.type = vu ? "text" : "password";
+  btn.textContent = vu ? "🙈" : "👁";
+  btn.style.opacity = vu ? "1" : ".65";
+}
 function toast(msg,ms=2400){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("on"),ms); }
 async function sha(txt){
   if(window.crypto && crypto.subtle && location.protocol!=="file:"){
@@ -494,7 +510,8 @@ async function startSession(u,mark=true){
   if(mark){ u.dernier=Date.now(); await DB.put("users",u); }
   $("#login").style.display="none"; $("#app").style.display="block";
   $("#whoName").textContent=u.nom; $("#whoRole").textContent=ROLES[u.role].label;
-  await refresh(); go("home");
+  if(!vus()) marquerVus();
+  await refresh(); checkNouveaux(); go("home");
 }
 $("#li_go").onclick = async ()=>{
   const mail=$("#li_mail").value.trim(), pw=$("#li_pass").value;
@@ -524,6 +541,36 @@ function go(view,arg){
     entreprise:vEntreprise,journal:vJournal,editeur:vEditeur,rapport:vRapport}[view]||vHome)(arg);
 }
 
+/* ===================== NOUVEAUTÉS / NOTIFICATIONS ===================== */
+function vus(){ return +(LS.get("axair_vus")||0); }
+function marquerVus(){ LS.set("axair_vus", String(Date.now())); }
+function nouveaux(){
+  const t=vus(); if(!t||!S.user) return [];
+  return S.releves.filter(r=>r.auteurId!==S.user.id && (r.cree||0)>t);
+}
+function checkNouveaux(){
+  const n=nouveaux();
+  if(!n.length) return;
+  if(window.Notification && Notification.permission==="granted"){
+    const dej=+(LS.get("axair_notif")||0);
+    const recent=n.filter(r=>(r.cree||0)>dej);
+    if(recent.length){
+      try{ new Notification("AXAIR Relevés",{
+        body: recent.length===1 ? recent[0].auteur+" a créé le relevé "+recent[0].ref
+                                : recent.length+" nouveaux relevés de l'équipe",
+        icon:"icon-192.png", tag:"axair-releves" }); }catch(e){}
+      LS.set("axair_notif", String(Date.now()));
+    }
+  }
+}
+async function activerNotifs(){
+  if(!window.Notification) return toast("Notifications non gérées par ce navigateur");
+  const p=await Notification.requestPermission();
+  toast(p==="granted" ? "Notifications activées"
+    : "Refusé — autorisez les notifications dans les réglages du téléphone");
+  vProfil();
+}
+
 /* ===================== ACCUEIL ===================== */
 function statutBadge(r){ const s=STATUTS[r.statut]||STATUTS.brouillon; return `<span class="badge ${s.c}">${s.l}</span>`; }
 function ligneReleve(r){
@@ -549,6 +596,11 @@ function vHome(){
     <div class="hero"><h1>Bonjour ${esc((S.user.nom||"").split(" ")[0])}</h1>
       <p>${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</p>
       <div class="tri"></div></div>
+    ${(()=>{ const n=nouveaux(); return n.length?`<div class="card" style="border-color:var(--blue);background:var(--blue-soft);cursor:pointer"
+      onclick="marquerVus();S.filters={};go('releves')">
+      <b style="color:var(--navy)">${n.length} nouveau${n.length>1?"x":""} relevé${n.length>1?"s":""}</b>
+      <div style="font-size:.84rem;color:var(--muted)">${esc([...new Set(n.map(r=>r.auteur))].join(", "))} · appuyez pour consulter</div>
+      </div>`:""; })()}
     ${can("creer")?`<button class="btn block" style="margin-bottom:14px" onclick="nouveauReleve()">＋ Nouveau relevé de chantier</button>`:""}
     <div class="stats">
       <div class="stat accent"><b>${rs.length}</b><span>Relevés ${can("voir_tous")?"au total":"à mon nom"}</span></div>
@@ -746,8 +798,12 @@ function vProfil(){
       </div>
     </div>
     <div class="card"><h2>Mot de passe</h2><div class="tri-sm"></div>
-      <div class="field"><label>Nouveau mot de passe</label><input class="input" type="password" id="p1"></div>
-      <div class="field"><label>Confirmer</label><input class="input" type="password" id="p2"></div>
+      <div class="field"><label>Nouveau mot de passe</label>
+        <div class="pwwrap"><input class="input" type="password" id="p1">
+          <button type="button" class="pweye" onclick="voirPw('p1',this)">👁</button></div></div>
+      <div class="field"><label>Confirmer</label>
+        <div class="pwwrap"><input class="input" type="password" id="p2">
+          <button type="button" class="pweye" onclick="voirPw('p2',this)">👁</button></div></div>
       <button class="btn block" onclick="changePass()">Modifier le mot de passe</button></div>
     <div class="card"><h2>Application</h2><div class="tri-sm"></div>
       <div style="font-size:.85rem;color:var(--muted);margin-bottom:10px">
@@ -756,6 +812,8 @@ function vProfil(){
         Cloud : <b>${Cloud.actif()?"Firebase connecté ("+FIREBASE_CONFIG.projectId+")":"non configuré — données locales uniquement"}</b>
         ${Cloud.erreur()?`<br><span style="color:var(--red)">Dernière erreur : ${esc(Cloud.erreur())}</span>`:""}</div>
       ${Cloud.actif()?`<button class="btn sm block" style="margin-bottom:10px" onclick="synchroniser()">Synchroniser maintenant</button>`:""}
+      <button class="btn sm ghost block" style="margin-bottom:10px" onclick="activerNotifs()">
+        ${(window.Notification&&Notification.permission==="granted")?"Notifications activées ✓":"Activer les notifications"}</button>
       <div class="grid2">
         <button class="btn sm ghost" onclick="sauvegardeJSON()">Sauvegarde .json</button>
         <button class="btn sm ghost" onclick="$('#restoreFile').click()">Restaurer</button>
@@ -778,7 +836,7 @@ async function synchroniser(){
   for(const r of S.releves) Cloud.push("releves",r);
   for(const c of S.clients) Cloud.push("clients",c);
   for(const u of S.users) Cloud.push("users",u);
-  const ok=await Cloud.pull(); await refresh();
+  const ok=await Cloud.pull(); await refresh(); checkNouveaux();
   if(ok) toast("Synchronisation terminée");
   else{
     const e=Cloud.erreur()||"";
@@ -877,7 +935,8 @@ function editUser(id){
         ${(u.perms||[]).includes(k)?"checked":""}> ${l}</label>`).join("")}</div></div>
     <label class="switch"><input type="checkbox" id="u_actif" ${u.actif?"checked":""}> Compte actif</label>
     <div class="field" style="margin-top:10px"><label>${id?"Réinitialiser le mot de passe (laisser vide pour conserver)":"Mot de passe"}</label>
-      <input class="input" type="text" id="u_pass" placeholder="${id?"nouveau mot de passe":"ex. axair2026"}"></div>
+      <div class="pwwrap"><input class="input" type="password" id="u_pass" placeholder="${id?"nouveau mot de passe":"ex. Axair2026"}">
+        <button type="button" class="pweye" onclick="voirPw('u_pass',this)">👁</button></div></div>
     <button class="btn block" onclick="saveUser('${u.id}',${!!id})">Enregistrer</button>
     ${id&&u.id!==S.user.id?`<button class="btn block" style="margin-top:8px;background:#fff;color:var(--red);border:1px solid #FBD5D5"
       onclick="delUser('${u.id}')">Supprimer cet utilisateur</button>`:""}`);
@@ -1081,9 +1140,12 @@ async function creerClientDepuisReleve(){
   await log("a créé le client "+(c.societe||c.nom)); toast("Fiche client créée"); tInfos();
 }
 async function supprimerReleve(){
-  if(!confirm("Supprimer définitivement ce relevé et ses photos ?")) return;
-  await DB.del("releves",S.current.id); await log("a supprimé le relevé "+S.current.ref);
-  S.current=null; await refresh(); go("releves"); toast("Relevé supprimé");
+  const r=S.current; if(!r) return;
+  if(!confirm("Supprimer définitivement le relevé "+r.ref+" et ses photos ?")) return;
+  clearTimeout(saveTimer); saveTimer=null; S.current=null;   // sinon l'enregistrement en attente le recrée
+  await DB.del("releves",r.id);
+  await log("a supprimé le relevé "+r.ref);
+  await refresh(); go("releves"); toast("Relevé "+r.ref+" supprimé");
 }
 
 /* ---------- compression image ---------- */
@@ -1485,8 +1547,10 @@ async function buildPDF(r){
     i.src=src;
   })));
   const imgSize=src=>dims[src]||{w:4,h:3};
-  function trico(yy){ doc.setFillColor(...navy); doc.rect(M,yy,(W-2*M)*.46,1.2,"F");
-    doc.setFillColor(...red); doc.rect(M+(W-2*M)*.6,yy,(W-2*M)*.4,1.2,"F"); }
+  function trico(yy){ const L=(W-2*M)/3;
+    doc.setFillColor(...navy); doc.rect(M,yy,L,1.2,"F");
+    doc.setFillColor(230,236,245); doc.rect(M+L,yy,L,1.2,"F");
+    doc.setFillColor(...red); doc.rect(M+2*L,yy,L,1.2,"F"); }
   function br(need){ if(y+need>H-20){ doc.addPage(); y=M; } }
   function h4(t){ br(14); y+=4; doc.setFontSize(8.5); doc.setTextColor(...blue); doc.setFont("helvetica","bold");
     doc.text(t.toUpperCase(),M,y); y+=1.5; doc.setDrawColor(225,232,240); doc.line(M,y,W-M,y); y+=5; }
@@ -1584,8 +1648,10 @@ async function buildPDF(r){
   const n=doc.getNumberOfPages();
   for(let i=1;i<=n;i++){
     doc.setPage(i);
-    doc.setFillColor(...navy); doc.rect(M,H-16,(W-2*M)*.46,1,"F");
-    doc.setFillColor(...red); doc.rect(M+(W-2*M)*.6,H-16,(W-2*M)*.4,1,"F");
+    const L3=(W-2*M)/3;
+    doc.setFillColor(...navy); doc.rect(M,H-16,L3,1,"F");
+    doc.setFillColor(230,236,245); doc.rect(M+L3,H-16,L3,1,"F");
+    doc.setFillColor(...red); doc.rect(M+2*L3,H-16,L3,1,"F");
     doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont("helvetica","normal");
     const pied=[e.nom,[e.adresse,e.cp,e.ville].filter(Boolean).join(" "),e.tel,e.email].filter(Boolean).join(" · ");
     doc.text(pied.slice(0,110),M,H-11);
@@ -1661,6 +1727,7 @@ window.addEventListener("online",netUI); window.addEventListener("offline",netUI
 if("serviceWorker" in navigator && location.protocol.startsWith("http"))
   navigator.serviceWorker.register("sw.js").catch(()=>{});
 window.addEventListener("beforeunload",()=>{ if(S.current&&saveTimer){ clearTimeout(saveTimer); DB.put("releves",S.current); } });
+setInterval(()=>{ if(Cloud.actif()&&navigator.onLine&&!S.current) Cloud.pull().then(async ok=>{ if(ok){ await refresh(); checkNouveaux(); if(S.view==="home") vHome(); } }); }, 90000);
 boot().then(()=>{ if(!navigator.onLine) netUI(); })
   .catch(err=>{ console.error(err); $("#login").style.display="flex"; toast("Démarrage en mode restreint"); });
 </script>
