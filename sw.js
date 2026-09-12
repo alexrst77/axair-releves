@@ -1,5 +1,5 @@
 /* AXAIR Relevés — service worker : coquille hors connexion */
-const CACHE = "axair-releves-v8";
+const CACHE = "axair-releves-v9";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png",
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
   "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js",

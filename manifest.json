@@ -1,0 +1,17 @@
+{
+  "name": "AXAIR Climatisation — Relevés de chantier",
+  "short_name": "AXAIR",
+  "description": "Relevés de chantier sur le terrain : photos annotées, notes dictées, travaux et rapport PDF.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#00174D",
+  "theme_color": "#00174D",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
